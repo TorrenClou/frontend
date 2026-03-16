@@ -1,25 +1,34 @@
 /**
- * Get the API base URL dynamically at runtime
+ * Get the API base URL at runtime
  *
- * Priority:
- * 1. NEXT_PUBLIC_API_URL env var (if set, used as override)
- * 2. Current window location (recommended for production)
- * 3. Fallback for SSR environments
+ * Priority (in order):
+ * 1. NEXT_PUBLIC_API_URL env var (explicit override, highest priority)
+ * 2. Window.__API_URL__ (injected by server during SSR)
+ * 3. Construct from backend port (if NEXT_PUBLIC_API_PORT set)
+ *    - Useful when frontend and backend on different ports of same hostname
+ *    - Example: frontend :3000, backend :5000
+ * 4. Fallback to localhost:47200/api for development
  */
 export function getApiBaseUrl(): string {
-  // If env var is set and doesn't point to localhost, use it
+  // 1. Explicit env var configuration (highest priority)
   const envUrl = process.env.NEXT_PUBLIC_API_URL
-  if (envUrl && !envUrl.includes('localhost')) {
+  if (envUrl) {
     return envUrl
   }
 
-  // Client-side: use the current server's hostname
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location
-    const baseUrl = port ? `${protocol}//${hostname}:${port}` : `${protocol}//${hostname}`
-    return `${baseUrl}/api`
+  // 2. Check for server-injected URL (set by middleware/layout during SSR)
+  if (typeof window !== 'undefined' && (window as any).__API_URL__) {
+    return (window as any).__API_URL__
   }
 
-  // SSR fallback: use env var or default
-  return envUrl || 'http://localhost:47200/api'
+  // 3. If backend port is specified, construct URL with same hostname as frontend
+  // This handles docker-compose scenarios where frontend and backend are on different ports
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_API_PORT) {
+    const { protocol, hostname } = window.location
+    const apiPort = process.env.NEXT_PUBLIC_API_PORT
+    return `${protocol}//${hostname}:${apiPort}/api`
+  }
+
+  // 4. Development fallback
+  return 'http://localhost:47200/api'
 }
