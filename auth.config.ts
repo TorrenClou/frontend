@@ -4,6 +4,29 @@ import axios from 'axios'
 import https from 'https'
 import type { BackendAuthResponse } from '@/types/api'
 
+/**
+ * Get the backend URL for server-side auth requests
+ * Prioritizes explicit BACKEND_URL env var, fallback to localhost for development
+ */
+function getBackendUrl(): string {
+  // If explicitly configured, use it (allows pointing to different backend server)
+  if (process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL
+  }
+
+  // Development fallback
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:47200'
+  }
+
+  // Production: BACKEND_URL should be set
+  console.warn(
+    'BACKEND_URL not configured. Please set BACKEND_URL environment variable in production. ' +
+    'Falling back to localhost:47200'
+  )
+  return 'http://localhost:47200'
+}
+
 export const authConfig = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
@@ -32,7 +55,8 @@ export const authConfig = {
               ? new https.Agent({ rejectUnauthorized: false })
               : new https.Agent()
 
-          const baseUrl = process.env.BACKEND_URL || 'http://localhost:47200'
+          // Get backend URL - prioritize explicit env var, fallback to localhost for dev
+          const baseUrl = getBackendUrl()
           const response = await axios.post<BackendAuthResponse>(
             `${baseUrl}/api/auth/login`,
             { email, password },

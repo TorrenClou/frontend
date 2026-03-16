@@ -1,9 +1,8 @@
 // Health API — public endpoints, no auth required
-// Base URL reuses NEXT_PUBLIC_API_URL so it's always consistent with the rest of the app.
-// e.g. NEXT_PUBLIC_API_URL = 'http://localhost:47200/api'
-// → /health/ready resolves to 'http://localhost:47200/api/health/ready'
+// Base URL is determined dynamically at runtime based on the current server
+// This ensures the frontend always queries the same server it's being served from
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:47200/api'
+import { getApiBaseUrl } from '../api-base'
 
 export type HealthStatus = 'operational' | 'degraded' | 'down' | 'loading'
 export type ServiceStatus = 'healthy' | 'unhealthy' | 'timeout'
@@ -30,7 +29,8 @@ export interface ReadinessResult {
  */
 export async function getReadiness(): Promise<ReadinessResult> {
     try {
-        const res = await fetch(`${API_BASE}/health/ready`, {
+        const apiBase = getApiBaseUrl()
+        const res = await fetch(`${apiBase}/health/ready`, {
             cache: 'no-store',
         })
         const data: ReadinessResponse = await res.json()
