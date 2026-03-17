@@ -36,9 +36,10 @@ export function OAuthCredentialsForm({ className }: OAuthCredentialsFormProps) {
     const isFormOpen = useStorageProfilesStore(selectIsCredentialsFormOpen)
     const { setCredentialsFormOpen, setCredentialSaveError } = useStorageProfilesStore()
 
-    // Auto-generate redirect URI based on backend URL
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:47200'
-    const defaultRedirectUri = `${backendUrl}/api/storage/gdrive/callback`
+    // Auto-generate redirect URI based on the current server URL (via proxy)
+    // Uses window.location.origin so it always matches the actual server IP/hostname
+    // e.g. http://192.168.1.100:47100/proxy/api/storage/gdrive/callback
+    const defaultRedirectUri = `${window.location.origin}/proxy/api/storage/gdrive/callback`
 
     const {
         register,
