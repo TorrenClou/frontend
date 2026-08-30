@@ -15,7 +15,7 @@ import {
 import { StorageHealthBadge, formatQuota } from '@/components/storage/StorageHealthBadge'
 import { useStorageProfiles, useStorageProfilesHealth } from '@/hooks/useStorageProfiles'
 import { useChangeJobStorageProfile } from '@/hooks/useJobs'
-import { StorageHealthStatus, StorageRouteReason } from '@/types/enums'
+import { JobStatus, StorageHealthStatus, StorageRouteReason } from '@/types/enums'
 import type { Job } from '@/types/jobs'
 import type { StorageProfileHealth } from '@/types/storage'
 import { ArrowRight, Check, ChevronDown, HardDrive, Loader2, Pin, Shuffle } from 'lucide-react'
@@ -41,6 +41,26 @@ const routeReasonText: Record<StorageRouteReason, string | null> = {
 }
 
 /**
+ * Why the destination is locked, or null when it can still be changed.
+ *
+ * Mirrors JobDto.CanChangeStorageProfile on the server. Deriving it here as well
+ * means an older API that does not send the flag still gets the right answer, and
+ * that the reason shown to the user is the actual status — never a guess.
+ */
+function lockedReason(status: JobStatus): string | null {
+    switch (status) {
+        case JobStatus.COMPLETED:
+            return 'This job has finished, so its destination can no longer change.'
+        case JobStatus.CANCELLED:
+            return 'This job was cancelled, so its destination can no longer change.'
+        case JobStatus.UPLOADING:
+            return 'The upload is running. Wait for it to finish or fail, then retry it against another drive.'
+        default:
+            return null
+    }
+}
+
+/**
  * Shows where a job uploads to, whether that drive is healthy, and lets the user
  * send it somewhere else while the upload has not started yet.
  */
@@ -59,6 +79,10 @@ export function JobDestinationCard({ job, className }: JobDestinationCardProps) 
     const currentHealth = healthByProfileId.get(job.storageProfileId)
     const candidates = (profiles ?? []).filter((profile) => profile.isActive)
     const rerouteExplanation = routeReasonText[job.lastRouteReason]
+
+    // The server's flag wins when it sends one; otherwise fall back to the status.
+    const blockedReason = lockedReason(job.status as JobStatus)
+    const canChange = job.canChangeStorageProfile ?? blockedReason === null
 
     const handleSelect = (storageProfileId: number) => {
         if (storageProfileId === job.storageProfileId) return
@@ -122,7 +146,7 @@ export function JobDestinationCard({ job, className }: JobDestinationCardProps) 
                     </div>
                 )}
 
-                {job.canChangeStorageProfile ? (
+                {canChange ? (
                     <div className="space-y-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -215,9 +239,7 @@ export function JobDestinationCard({ job, className }: JobDestinationCardProps) 
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">
-                        {job.status === 'UPLOADING'
-                            ? 'The upload is running. Wait for it to finish or fail, then retry it against another drive.'
-                            : 'This job has finished, so its destination can no longer change.'}
+                        {blockedReason ?? 'The destination cannot be changed right now.'}
                     </p>
                 )}
             </CardContent>

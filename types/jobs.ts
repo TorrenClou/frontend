@@ -89,7 +89,9 @@ export const jobSchema = z.object({
     // Action state properties
     canRetry: z.boolean().optional().default(false),
     canCancel: z.boolean().optional().default(false),
-    canChangeStorageProfile: z.boolean().optional().default(false),
+    // Left undefined rather than defaulted: an absent field means "this server did not
+    // tell us", which is not the same as "no". Callers derive the answer from status.
+    canChangeStorageProfile: z.boolean().optional(),
 })
 
 export const paginatedJobsSchema = z.object({
