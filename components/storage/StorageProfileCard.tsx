@@ -3,10 +3,16 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Cloud, Settings, Star, Loader2, Mail, AlertTriangle, ExternalLink } from 'lucide-react'
-import { StorageProviderType } from '@/types/enums'
+import { Cloud, Settings, Star, Loader2, Mail, AlertTriangle, ExternalLink, Activity } from 'lucide-react'
+import { StorageHealthStatus, StorageProviderType } from '@/types/enums'
 import type { StorageProfileCardProps } from '@/types/storage'
-import { useSetDefaultProfile, useReauthenticateGoogleDrive } from '@/hooks/useStorageProfiles'
+import {
+    useSetDefaultProfile,
+    useReauthenticateGoogleDrive,
+    useCheckStorageProfileHealth,
+    useStorageProfilesHealth,
+} from '@/hooks/useStorageProfiles'
+import { StorageHealthBadge, formatQuota } from './StorageHealthBadge'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -36,7 +42,16 @@ const providerConfig: Record<StorageProviderType, { icon: React.ReactNode; color
 export function StorageProfileCard({ profile, className }: StorageProfileCardProps) {
     const setDefaultMutation = useSetDefaultProfile()
     const reauthenticateMutation = useReauthenticateGoogleDrive()
+    const checkHealthMutation = useCheckStorageProfileHealth()
+    const { data: healthList } = useStorageProfilesHealth()
     const config = providerConfig[profile.providerType] || providerConfig[StorageProviderType.GoogleDrive]
+
+    // Prefer the live health list; fall back to the state stored on the profile.
+    const health = healthList?.find((entry) => entry.profileId === profile.id)
+    const healthStatus = health?.status ?? profile.healthStatus
+    const healthMessage = health?.message ?? profile.healthMessage
+    const freeQuota = formatQuota(health?.quotaFreeBytes ?? profile.quotaFreeBytes)
+    const totalQuota = formatQuota(health?.quotaTotalBytes ?? profile.quotaTotalBytes)
 
     const handleSetDefault = () => {
         if (profile.isDefault) return
@@ -88,7 +103,10 @@ export function StorageProfileCard({ profile, className }: StorageProfileCardPro
                             )}
                         </div>
                     </div>
-                    {getBadge()}
+                    <div className="flex flex-col items-end gap-2">
+                        {getBadge()}
+                        <StorageHealthBadge status={healthStatus} message={healthMessage} />
+                    </div>
                 </div>
 
                 {/* Reauth Warning Banner */}
@@ -99,6 +117,20 @@ export function StorageProfileCard({ profile, className }: StorageProfileCardPro
                     </div>
                 )}
 
+                {/* Health detail — only when there is something the user should act on */}
+                {!needsReauth && healthMessage && healthStatus !== StorageHealthStatus.Healthy && (
+                    <div className="mt-3 flex gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>{healthMessage}</span>
+                    </div>
+                )}
+
+                {freeQuota && (
+                    <p className="mt-3 text-xs text-muted-foreground">
+                        {freeQuota} free{totalQuota ? ` of ${totalQuota}` : ''}
+                    </p>
+                )}
+
                 <div className="mt-4 pt-4 border-t flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" size="sm" asChild>
@@ -106,6 +138,19 @@ export function StorageProfileCard({ profile, className }: StorageProfileCardPro
                                 <Settings className="mr-2 h-4 w-4" />
                                 Manage
                             </Link>
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => checkHealthMutation.mutate(profile.id)}
+                            disabled={checkHealthMutation.isPending}
+                        >
+                            {checkHealthMutation.isPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Activity className="mr-2 h-4 w-4" />
+                            )}
+                            Test
                         </Button>
                         {needsReauth && (
                             <Button

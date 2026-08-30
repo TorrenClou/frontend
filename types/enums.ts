@@ -33,3 +33,21 @@ export enum JobStatus {
 export enum JobType {
     Torrent = "Torrent"
 }
+
+/** Connection health of a storage profile, as reported by the backend health probe. */
+export enum StorageHealthStatus {
+    Unknown = "Unknown",
+    Healthy = "Healthy",
+    Degraded = "Degraded",
+    Unhealthy = "Unhealthy"
+}
+
+/** Why a job last changed storage destination. */
+export enum StorageRouteReason {
+    None = "None",
+    UserRouted = "UserRouted",
+    FailoverNeedsReauth = "FailoverNeedsReauth",
+    FailoverQuotaExceeded = "FailoverQuotaExceeded",
+    FailoverUnhealthy = "FailoverUnhealthy",
+    FailoverInactive = "FailoverInactive"
+}

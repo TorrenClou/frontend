@@ -15,6 +15,7 @@ import {
     JobErrorCard,
     JobSuccessCard,
     JobDetailsCard,
+    JobDestinationCard,
     JobCancelModal,
     JobLoadingState,
     JobErrorState,
@@ -33,7 +34,11 @@ export default function JobDetailsPage() {
     const cancelJobMutation = useCancelJob()
 
     const handleRetry = () => {
-        retryJobMutation.mutate(jobId)
+        retryJobMutation.mutate({ jobId })
+    }
+
+    const handleRetryWithProfile = (storageProfileId: number) => {
+        retryJobMutation.mutate({ jobId, storageProfileId })
     }
 
     const handleCancel = () => {
@@ -79,6 +84,7 @@ export default function JobDetailsPage() {
                         <JobErrorCard
                             job={job}
                             onRetry={handleRetry}
+                            onRetryWithProfile={handleRetryWithProfile}
                             isRetrying={isRetrying}
                         />
                     )}
@@ -88,8 +94,9 @@ export default function JobDetailsPage() {
                     <JobDetailsCard job={job} />
                 </div>
 
-                {/* Right: timeline only */}
-                <div>
+                {/* Right: destination + timeline */}
+                <div className="space-y-6">
+                    <JobDestinationCard job={job} />
                     <JobTimeline jobId={jobId} />
                 </div>
             </div>

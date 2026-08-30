@@ -13,6 +13,8 @@ import {
     reauthenticateGoogleDrive,
     openGoogleDriveAuthPopup,
     configureS3,
+    getStorageProfilesHealth,
+    checkStorageProfileHealth,
 } from '@/lib/api/storage'
 import { getStorageErrorMessage } from '@/types/storage'
 import type { StorageProfile, SaveOAuthCredentialsRequest, ConnectGoogleDriveRequest, ConfigureS3Request } from '@/types/storage'
@@ -31,6 +33,7 @@ export const storageProfileKeys = {
     details: () => [...storageProfileKeys.all, 'detail'] as const,
     detail: (id: number) => [...storageProfileKeys.details(), id] as const,
     credentials: () => [...storageProfileKeys.all, 'credentials'] as const,
+    health: () => [...storageProfileKeys.all, 'health'] as const,
 }
 
 // ============================================
@@ -64,9 +67,64 @@ export function useStorageProfile(profileId: number) {
     })
 }
 
+/**
+ * Hook to fetch connection health for every active storage profile.
+ *
+ * The backend caches probe results for a couple of minutes, so polling here is
+ * cheap — it only reaches the provider when the cache has expired.
+ */
+export function useStorageProfilesHealth() {
+    const { status } = useSession()
+
+    return useQuery({
+        queryKey: storageProfileKeys.health(),
+        queryFn: () => getStorageProfilesHealth(),
+        enabled: status === 'authenticated',
+        staleTime: 60 * 1000,
+        // Longer than the server's probe cache, so routine polling is served from cache
+        // rather than hitting every provider on a timer.
+        refetchInterval: 5 * 60 * 1000,
+    })
+}
+
 // ============================================
 // Mutation Hooks
 // ============================================
+
+/**
+ * Hook to run a live connection test against one profile, bypassing the cache
+ */
+export function useCheckStorageProfileHealth() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: checkStorageProfileHealth,
+
+        onSuccess: (health) => {
+            queryClient.invalidateQueries({ queryKey: storageProfileKeys.health() })
+            queryClient.invalidateQueries({ queryKey: storageProfileKeys.list() })
+            queryClient.invalidateQueries({ queryKey: storageProfileKeys.detail(health.profileId) })
+
+            if (health.isUsable) {
+                toast.success(`${health.profileName} is reachable`, {
+                    description: health.message ?? 'Ready to accept uploads.',
+                })
+            } else {
+                toast.error(`${health.profileName} is not accepting uploads`, {
+                    description: health.message ?? health.reason ?? undefined,
+                })
+            }
+        },
+
+        onError: (error: unknown) => {
+            const extracted = extractApiError(error)
+            const errorMessage = extracted.code
+                ? getStorageErrorMessage(extracted.code, extracted.message)
+                : extracted.message
+            toast.error('Connection test failed', { description: errorMessage })
+        },
+    })
+}
 
 /**
  * Hook to fetch all saved OAuth credentials

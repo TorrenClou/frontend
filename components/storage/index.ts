@@ -6,6 +6,7 @@ export { GoogleDriveConnectForm } from './GoogleDriveConnectForm'
 export { S3ConfigForm } from './S3ConfigForm'
 export { StorageProfilesList } from './StorageProfilesList'
 export { StorageProfileSelector } from './StorageProfileSelector'
+export { StorageHealthBadge, formatQuota } from './StorageHealthBadge'
 
 // Detail Page Components
 export { StorageProfileHeader } from './StorageProfileHeader'

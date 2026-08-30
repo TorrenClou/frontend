@@ -1,6 +1,7 @@
 // Mock data generators for UI-only implementation
 import {
     StorageProviderType,
+    StorageHealthStatus,
     JobStatus,
     JobType,
 } from '@/types/enums'
@@ -56,6 +57,13 @@ export const mockStorageProfiles: StorageProfile[] = [
         isActive: true,
         needsReauth: false,
         isConfigured: true,
+        healthStatus: StorageHealthStatus.Healthy,
+        isUsable: true,
+        healthMessage: null,
+        lastHealthCheckAt: new Date().toISOString(),
+        quotaTotalBytes: 15 * 1024 * 1024 * 1024,
+        quotaUsedBytes: 4 * 1024 * 1024 * 1024,
+        quotaFreeBytes: 11 * 1024 * 1024 * 1024,
         createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -67,6 +75,13 @@ export const mockStorageProfiles: StorageProfile[] = [
         isActive: true,
         needsReauth: false,
         isConfigured: true,
+        healthStatus: StorageHealthStatus.Unknown,
+        isUsable: true,
+        healthMessage: null,
+        lastHealthCheckAt: null,
+        quotaTotalBytes: null,
+        quotaUsedBytes: null,
+        quotaFreeBytes: null,
         createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
     },
     {
@@ -78,6 +93,13 @@ export const mockStorageProfiles: StorageProfile[] = [
         isActive: false,
         needsReauth: false,
         isConfigured: true,
+        healthStatus: StorageHealthStatus.Unhealthy,
+        isUsable: false,
+        healthMessage: 'This storage profile is disconnected.',
+        lastHealthCheckAt: null,
+        quotaTotalBytes: null,
+        quotaUsedBytes: null,
+        quotaFreeBytes: null,
         createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
     },
 ]

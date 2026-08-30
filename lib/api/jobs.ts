@@ -125,10 +125,46 @@ export interface JobActionResponse {
 /**
  * Retry a failed job
  * POST /api/jobs/{id}/retry
+ *
+ * @param storageProfileId - Send the retry to a different drive. Omit to reuse the
+ *                           job's current destination.
  */
-export async function retryJob(jobId: number): Promise<JobActionResponse> {
-    const response = await apiClient.post<JobActionResponse>(`/jobs/${jobId}/retry`)
+export async function retryJob(
+    jobId: number,
+    storageProfileId?: number
+): Promise<JobActionResponse> {
+    const response = await apiClient.post<JobActionResponse>(
+        `/jobs/${jobId}/retry`,
+        storageProfileId ? { storageProfileId } : {}
+    )
     return response.data
+}
+
+/**
+ * Point a job at a different storage profile before its upload runs
+ * PATCH /api/jobs/{id}/storage-profile
+ *
+ * Rejected while the job is actively uploading — retry with a target instead.
+ *
+ * @param allowFailover - false pins the job to this drive, so it fails rather than
+ *                        being rerouted automatically if the drive goes unhealthy.
+ */
+export async function changeJobStorageProfile(
+    jobId: number,
+    storageProfileId: number,
+    allowFailover = true
+): Promise<Job> {
+    const response = await apiClient.patch<Job>(`/jobs/${jobId}/storage-profile`, {
+        storageProfileId,
+        allowFailover,
+    })
+
+    try {
+        return jobSchema.parse(response.data)
+    } catch (error) {
+        console.error('Job detail validation error:', error)
+        throw new Error('Invalid job data received from server. Please try again later.')
+    }
 }
 
 /**

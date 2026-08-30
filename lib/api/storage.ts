@@ -10,10 +10,13 @@ import {
     ConnectGoogleDriveRequestSchema,
     GoogleDriveAuthResponseSchema,
     ConfigureS3RequestSchema,
+    StorageProfileHealthSchema,
+    StorageProfileHealthArraySchema,
 } from '@/types/storage'
 import type {
     StorageProfile,
     StorageProfileDetail,
+    StorageProfileHealth,
     SaveOAuthCredentialsRequest,
     SaveOAuthCredentialsResponse,
     OAuthCredential,
@@ -23,7 +26,7 @@ import type {
 } from '@/types/storage'
 
 // Re-export types for convenience
-export type { StorageProfile, StorageProfileDetail, SaveOAuthCredentialsRequest, SaveOAuthCredentialsResponse, OAuthCredential, ConnectGoogleDriveRequest, GoogleDriveAuthResponse, ConfigureS3Request }
+export type { StorageProfile, StorageProfileDetail, StorageProfileHealth, SaveOAuthCredentialsRequest, SaveOAuthCredentialsResponse, OAuthCredential, ConnectGoogleDriveRequest, GoogleDriveAuthResponse, ConfigureS3Request }
 export { getStorageErrorMessage, storageErrorMessages } from '@/types/storage'
 
 /**
@@ -132,6 +135,44 @@ export async function getStorageProfiles(): Promise<StorageProfile[]> {
 export async function getStorageProfile(id: number): Promise<StorageProfileDetail> {
     const response = await apiClient.get<StorageProfileDetail>(`/storage/profiles/${id}`)
     return StorageProfileDetailSchema.parse(response.data)
+}
+
+/**
+ * Connection health for every active storage profile
+ * GET /api/storage/profiles/health
+ *
+ * @param refresh - Bypass the server-side cache and call each provider live
+ */
+export async function getStorageProfilesHealth(refresh = false): Promise<StorageProfileHealth[]> {
+    const response = await apiClient.get<StorageProfileHealth[]>(
+        `/storage/profiles/health${refresh ? '?refresh=true' : ''}`
+    )
+    return StorageProfileHealthArraySchema.parse(response.data)
+}
+
+/**
+ * Connection health for a single storage profile
+ * GET /api/storage/profiles/{id}/health
+ */
+export async function getStorageProfileHealth(
+    id: number,
+    refresh = false
+): Promise<StorageProfileHealth> {
+    const response = await apiClient.get<StorageProfileHealth>(
+        `/storage/profiles/${id}/health${refresh ? '?refresh=true' : ''}`
+    )
+    return StorageProfileHealthSchema.parse(response.data)
+}
+
+/**
+ * Run a live connection test against a profile, bypassing the cache
+ * POST /api/storage/profiles/{id}/health/check
+ */
+export async function checkStorageProfileHealth(id: number): Promise<StorageProfileHealth> {
+    const response = await apiClient.post<StorageProfileHealth>(
+        `/storage/profiles/${id}/health/check`
+    )
+    return StorageProfileHealthSchema.parse(response.data)
 }
 
 /**

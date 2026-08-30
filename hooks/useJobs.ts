@@ -10,6 +10,7 @@ import {
     getJobTimeline,
     retryJob,
     cancelJob,
+    changeJobStorageProfile,
 } from '@/lib/api/jobs'
 import { useJobsStore } from '@/stores/jobsStore'
 import type { JobsQueryParams, JobTimelineQueryParams } from '@/types/jobs'
@@ -209,22 +210,62 @@ function handleJobActionError(error: unknown): string {
 // Job Action Mutation Hooks
 // ============================================
 
+export interface RetryJobVariables {
+    jobId: number
+    /** Retry against a different drive. Omit to reuse the job's current destination. */
+    storageProfileId?: number
+}
+
 /**
- * Hook for retrying a failed job
+ * Hook for retrying a failed job, optionally against a different storage profile
  */
 export function useRetryJob() {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: retryJob,
-        onSuccess: () => {
+        mutationFn: ({ jobId, storageProfileId }: RetryJobVariables) =>
+            retryJob(jobId, storageProfileId),
+        onSuccess: (_result, variables) => {
             // Invalidate job queries to refresh data
             queryClient.invalidateQueries({ queryKey: jobsKeys.all })
-            toast.success('Job retry initiated successfully')
+            toast.success(
+                variables.storageProfileId
+                    ? 'Job retry initiated on the selected drive'
+                    : 'Job retry initiated successfully'
+            )
         },
         onError: (error) => {
             const message = handleJobActionError(error)
             toast.error('Failed to retry job', { description: message })
+        },
+    })
+}
+
+export interface ChangeJobStorageProfileVariables {
+    jobId: number
+    storageProfileId: number
+    /** false pins the job to this drive instead of allowing automatic failover. */
+    allowFailover?: boolean
+}
+
+/**
+ * Hook for pointing a job at a different storage profile before its upload runs
+ */
+export function useChangeJobStorageProfile() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ jobId, storageProfileId, allowFailover }: ChangeJobStorageProfileVariables) =>
+            changeJobStorageProfile(jobId, storageProfileId, allowFailover ?? true),
+        onSuccess: (job) => {
+            queryClient.invalidateQueries({ queryKey: jobsKeys.all })
+            toast.success('Destination updated', {
+                description: `This job will upload to ${job.storageProfileName ?? 'the selected drive'}.`,
+            })
+        },
+        onError: (error) => {
+            const message = handleJobActionError(error)
+            toast.error('Failed to change destination', { description: message })
         },
     })
 }

@@ -1,6 +1,6 @@
 // Storage Profile Types with Zod Validation
 import { z } from 'zod'
-import { StorageProviderType } from './enums'
+import { StorageHealthStatus, StorageProviderType } from './enums'
 
 // ============================================
 // Zod Schemas
@@ -25,8 +25,38 @@ export const StorageProfileSchema = z.object({
     isActive: z.boolean(),
     needsReauth: z.boolean(),
     isConfigured: z.boolean(),
+    // Health fields reflect the last stored probe, not a live check.
+    // Call getStorageProfileHealth/checkStorageProfileHealth for a fresh result.
+    healthStatus: z.nativeEnum(StorageHealthStatus).default(StorageHealthStatus.Unknown),
+    isUsable: z.boolean().default(true),
+    healthMessage: z.string().nullable().default(null),
+    lastHealthCheckAt: z.string().nullable().default(null),
+    quotaTotalBytes: z.number().nullable().default(null),
+    quotaUsedBytes: z.number().nullable().default(null),
+    quotaFreeBytes: z.number().nullable().default(null),
     createdAt: z.string(),
 })
+
+/** Live connection probe result — GET /storage/profiles/{id}/health */
+export const StorageProfileHealthSchema = z.object({
+    profileId: z.number(),
+    profileName: z.string(),
+    providerType: z.string(),
+    email: z.string().nullable(),
+    status: z.nativeEnum(StorageHealthStatus),
+    isUsable: z.boolean(),
+    reason: z.string().nullable(),
+    message: z.string().nullable(),
+    needsReauth: z.boolean(),
+    consecutiveFailures: z.number(),
+    quotaTotalBytes: z.number().nullable(),
+    quotaUsedBytes: z.number().nullable(),
+    quotaFreeBytes: z.number().nullable(),
+    checkedAt: z.string().nullable(),
+    fromCache: z.boolean(),
+})
+
+export const StorageProfileHealthArraySchema = z.array(StorageProfileHealthSchema)
 
 export const StorageProfileDetailSchema = StorageProfileSchema.extend({
     updatedAt: z.string().nullable(),
@@ -125,6 +155,7 @@ export const StorageProfilesArraySchema = z.array(StorageProfileSchema)
 export type ProfileName = z.infer<typeof profileNameSchema>
 export type StorageProfile = z.infer<typeof StorageProfileSchema>
 export type StorageProfileDetail = z.infer<typeof StorageProfileDetailSchema>
+export type StorageProfileHealth = z.infer<typeof StorageProfileHealthSchema>
 export type SaveOAuthCredentialsRequest = z.infer<typeof SaveOAuthCredentialsRequestSchema>
 export type SaveOAuthCredentialsResponse = z.infer<typeof SaveOAuthCredentialsResponseSchema>
 export type OAuthCredential = z.infer<typeof OAuthCredentialSchema>
@@ -179,6 +210,10 @@ export const storageErrorMessages: Record<string, string> = {
     'InvalidS3Bucket': 'Invalid S3 bucket name or bucket does not exist.',
     'S3ConnectionFailed': 'Failed to connect to S3. Please verify your credentials and endpoint.',
     'S3AccessDenied': 'Access denied. Please check your S3 permissions.',
+    // Storage health / upload routing
+    'StorageUnhealthy': 'That drive is not accepting uploads right now. Pick another one or reconnect it.',
+    'StorageInactive': 'The storage profile for this job is no longer active.',
+    'JobUploading': 'This job is uploading right now. Wait for it to finish or fail, then retry it against another drive.',
     // Client-side errors (SCREAMING_SNAKE_CASE - thrown locally, not from backend)
     'POPUP_BLOCKED': 'Popup blocked. Please allow popups for this site.',
     'AUTHORIZATION_CANCELLED': 'Authorization was cancelled.',

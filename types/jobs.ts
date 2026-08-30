@@ -1,6 +1,6 @@
 // Jobs Types with Zod Validation
 import { z } from 'zod'
-import { JobStatus, JobType } from './enums'
+import { JobStatus, JobType, StorageRouteReason } from './enums'
 import type { UserJob } from './api'
 
 // ============================================
@@ -62,6 +62,13 @@ export const jobSchema = z.object({
     id: z.number().int().positive(),
     storageProfileId: z.number().int().positive(),
     storageProfileName: z.string().nullable(),
+    // Set once a job has been moved off the profile it was created with.
+    originalStorageProfileId: z.number().int().positive().nullable().optional().default(null),
+    originalStorageProfileName: z.string().nullable().optional().default(null),
+    allowStorageFailover: z.boolean().optional().default(true),
+    failoverAttempts: z.number().int().nonnegative().optional().default(0),
+    lastRouteReason: z.nativeEnum(StorageRouteReason).optional().default(StorageRouteReason.None),
+    wasRerouted: z.boolean().optional().default(false),
     status: jobStatusSchema,
     type: jobTypeSchema,
     requestFileId: z.number().int().positive(),
@@ -82,6 +89,7 @@ export const jobSchema = z.object({
     // Action state properties
     canRetry: z.boolean().optional().default(false),
     canCancel: z.boolean().optional().default(false),
+    canChangeStorageProfile: z.boolean().optional().default(false),
 })
 
 export const paginatedJobsSchema = z.object({
