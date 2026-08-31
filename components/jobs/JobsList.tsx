@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { EmptyState } from '@/components/ui/empty-state'
-import { formatFileSize, formatRelativeTime } from '@/lib/utils/formatters'
+import { formatFileSize, formatRelativeTime, formatTransferSpeed } from '@/lib/utils/formatters'
 import { JobStatus } from '@/types/enums'
 import type { JobsListProps, Job } from '@/types/jobs'
 import { cn } from '@/lib/utils'
@@ -25,6 +25,8 @@ import {
     RefreshCw,
     AlertCircle,
     Cloud,
+    ArrowDown,
+    ArrowUp,
 } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -200,7 +202,31 @@ function JobItemCard({ job, isSelected, onSelect }: JobItemCardProps) {
                                 <Progress value={job.progressPercentage} className="h-2" />
                                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                                     <span>{formatFileSize(job.bytesDownloaded)} downloaded</span>
-                                    <span>{formatFileSize(job.totalBytes - job.bytesDownloaded)} remaining</span>
+                                    <div className="flex items-center gap-3">
+                                        {(() => {
+                                            // Whichever phase is moving. Both can be zero
+                                            // between phases, in which case nothing shows.
+                                            const down = formatTransferSpeed(job.downloadSpeedBytesPerSecond)
+                                            const up = formatTransferSpeed(job.uploadSpeedBytesPerSecond)
+                                            return (
+                                                <>
+                                                    {down && (
+                                                        <span className="flex items-center gap-1 font-mono text-primary">
+                                                            <ArrowDown className="h-3 w-3" />
+                                                            {down}
+                                                        </span>
+                                                    )}
+                                                    {up && (
+                                                        <span className="flex items-center gap-1 font-mono text-info-medium">
+                                                            <ArrowUp className="h-3 w-3" />
+                                                            {up}
+                                                        </span>
+                                                    )}
+                                                </>
+                                            )
+                                        })()}
+                                        <span>{formatFileSize(job.totalBytes - job.bytesDownloaded)} remaining</span>
+                                    </div>
                                 </div>
                             </div>
                         )}

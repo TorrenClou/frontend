@@ -152,3 +152,13 @@ const regionNames: Record<string, string> = {
 export function formatRegion(regionCode: string): string {
     return regionNames[regionCode] || regionCode
 }
+
+/**
+ * Formats a transfer rate for display, e.g. "4.2 MB/s".
+ * Returns null when there is nothing to show, so callers can omit the element
+ * entirely rather than render a misleading "0 B/s" on an idle job.
+ */
+export function formatTransferSpeed(bytesPerSecond: number | null | undefined): string | null {
+    if (!bytesPerSecond || bytesPerSecond <= 0 || !Number.isFinite(bytesPerSecond)) return null
+    return `${formatFileSize(bytesPerSecond)}/s`
+}

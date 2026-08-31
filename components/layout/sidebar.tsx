@@ -11,6 +11,7 @@ import {
   FileText,
   ChevronDown,
   ChevronRight,
+  Settings,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useHealth } from '@/hooks/useHealth'
@@ -78,6 +79,7 @@ const navigation: NavItem[] = [
   },
   { name: 'Jobs', href: '/jobs', icon: FolderOpen },
   { name: 'Storage', href: '/storage', icon: HardDrive },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 export function Sidebar() {

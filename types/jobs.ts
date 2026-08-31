@@ -78,6 +78,10 @@ export const jobSchema = z.object({
     bytesDownloaded: z.number().int().nonnegative(),
     bytesUploaded: z.number().int().nonnegative().default(0),
     totalBytes: z.number().int().nonnegative(),
+    // Live transfer rates written by the workers. Meaningful only during the matching
+    // phase — a finished job reports 0.
+    downloadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
+    uploadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
     selectedFilePaths: z.array(z.string()).nullable(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime().nullable().optional(),

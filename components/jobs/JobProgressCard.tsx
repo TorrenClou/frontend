@@ -1,9 +1,9 @@
 'use client'
 
-import { formatFileSize } from '@/lib/utils/formatters'
+import { formatFileSize, formatTransferSpeed } from '@/lib/utils/formatters'
 import type { Job } from '@/types/jobs'
 import { JobStatus } from '@/types/enums'
-import { Download, Upload } from 'lucide-react'
+import { Download, Upload, Gauge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface JobProgressCardProps {
@@ -36,6 +36,11 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
     const uploadPct = isCompleted ? 100 : isUploading ? safeUploadPct : 0
 
     const downloadLabel = downloadPct === 100 ? 'Completed' : isDownloading ? 'In Progress' : 'Pending'
+
+    // Only shown while that phase is actually moving; a stale rate on a finished job
+    // would look like it is still transferring.
+    const downloadSpeed = isDownloading ? formatTransferSpeed(job.downloadSpeedBytesPerSecond) : null
+    const uploadSpeed = isUploading ? formatTransferSpeed(job.uploadSpeedBytesPerSecond) : null
     const uploadLabel = uploadPct === 100 ? 'Completed' : isUploadFailed ? 'Upload Failed' : isUploading ? 'Uploading' : 'Pending'
 
     return (
@@ -75,6 +80,12 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         <span>
                             {formatFileSize(job.bytesDownloaded)} / {formatFileSize(job.totalBytes)}
                         </span>
+                        {downloadSpeed && (
+                            <span className="flex items-center gap-1 text-primary">
+                                <Gauge className="h-3.5 w-3.5" />
+                                {downloadSpeed}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
@@ -121,6 +132,12 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         <span>
                             {formatFileSize(isCompleted ? job.totalBytes : job.bytesUploaded)} / {formatFileSize(job.totalBytes)}
                         </span>
+                        {uploadSpeed && (
+                            <span className="flex items-center gap-1 text-info-medium">
+                                <Gauge className="h-3.5 w-3.5" />
+                                {uploadSpeed}
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
