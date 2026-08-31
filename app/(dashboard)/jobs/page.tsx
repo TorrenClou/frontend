@@ -173,7 +173,7 @@ function JobsListContent() {
             <div className="space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">My Jobs</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Jobs</h1>
                         <p className="text-muted-foreground mt-1">
                             Manage and track your download jobs
                         </p>
@@ -200,7 +200,7 @@ function JobsListContent() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">My Jobs</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Jobs</h1>
                     <p className="text-muted-foreground mt-1">
                         Manage and track your download jobs
                     </p>

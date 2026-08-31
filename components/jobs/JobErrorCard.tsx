@@ -83,7 +83,7 @@ export function JobErrorCard({
                                 </Button>
                             </DropdownMenuTrigger>
 
-                            <DropdownMenuContent align="start" className="min-w-[280px]">
+                            <DropdownMenuContent align="start" className="w-[min(20rem,calc(100vw-2rem))]">
                                 <DropdownMenuLabel>Retry this job on</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
 

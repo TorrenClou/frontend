@@ -12,6 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   Settings,
+  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useHealth } from '@/hooks/useHealth'
@@ -82,7 +83,14 @@ const navigation: NavItem[] = [
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string
+  /** Renders a close control — only meaningful when shown as a mobile drawer. */
+  showCloseButton?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ className, showCloseButton, onClose }: SidebarProps = {}) {
   const pathname = usePathname()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Torrents'])
 
@@ -102,12 +110,22 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-card">
-      <div className="flex h-16 items-center border-b border-border px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-teal-primary to-teal-secondary">
+    <div className={cn('flex h-full w-64 flex-col border-r border-border bg-card', className)}>
+      <div className="flex h-16 items-center border-b border-border px-4 sm:px-6">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-teal-primary to-teal-secondary">
           <FileText className="h-4 w-4 text-gray-900" />
         </div>
         <span className="ml-3 text-lg font-semibold">TorreClou</span>
+        {showCloseButton && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 pb-0">
         {navigation.map((item) => {

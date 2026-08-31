@@ -11,9 +11,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { LogOut, User, ChevronDown } from 'lucide-react'
+import { LogOut, User, ChevronDown, Menu } from 'lucide-react'
 
-export function Topbar() {
+interface TopbarProps {
+  /** Opens the mobile navigation drawer. Absent on screens with a permanent sidebar. */
+  onOpenMobileNav?: () => void
+}
+
+export function Topbar({ onOpenMobileNav }: TopbarProps = {}) {
   const { data: session } = useSession()
 
   const userInitials = session?.user?.name
@@ -23,7 +28,18 @@ export function Topbar() {
     .toUpperCase() || 'U'
 
   return (
-    <div className="flex h-16 items-center justify-end border-b border-border bg-card px-6">
+    <div className="flex h-16 items-center justify-between gap-2 border-b border-border bg-card px-4 sm:px-6 lg:justify-end">
+      {/* The only way to reach navigation below lg, where the sidebar is a drawer. */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="lg:hidden"
+        onClick={onOpenMobileNav}
+        aria-label="Open navigation"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -40,7 +56,7 @@ export function Topbar() {
                 {userInitials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium text-foreground hidden sm:block">
+            <span className="hidden max-w-[12rem] truncate text-sm font-medium text-foreground sm:block">
               {session?.user?.name || session?.user?.email}
             </span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />

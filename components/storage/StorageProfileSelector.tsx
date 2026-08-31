@@ -123,7 +123,7 @@ export function StorageProfileSelector({ className }: StorageProfileSelectorProp
                         <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-full min-w-[300px]">
+                <DropdownMenuContent className="w-[min(20rem,calc(100vw-2rem))]">
                     {activeProfiles.map((profile) => {
                         const status = healthOf(profile.id, profile.healthStatus)
                         const health = healthByProfileId.get(profile.id)

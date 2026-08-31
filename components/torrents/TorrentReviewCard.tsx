@@ -217,7 +217,7 @@ export function TorrentReviewCard({
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                         <div className="flex flex-col gap-1 rounded-lg border border-border bg-background/40 p-3">
                             <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 <Activity className="h-3.5 w-3.5" /> Health

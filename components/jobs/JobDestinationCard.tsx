@@ -167,7 +167,7 @@ export function JobDestinationCard({ job, className }: JobDestinationCardProps) 
                                 </Button>
                             </DropdownMenuTrigger>
 
-                            <DropdownMenuContent className="w-full min-w-[300px]">
+                            <DropdownMenuContent className="w-[min(20rem,calc(100vw-2rem))]">
                                 <DropdownMenuLabel>Available drives</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
 

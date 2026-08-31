@@ -97,13 +97,15 @@ export default function FilesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">My Files</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">My Files</h1>
         <p className="text-muted-foreground">
           Manage your active torrent downloads
         </p>
       </div>
 
-      <div className="rounded-lg border">
+      {/* A five-column table cannot fit a phone; let it scroll inside its own box
+          rather than pushing the whole page sideways. */}
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -123,7 +125,7 @@ export default function FilesPage() {
                   <TableCell>{getStatusBadge(job.status)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Progress value={job.progress} className="w-32" />
+                      <Progress value={job.progress} className="w-24 sm:w-32" />
                       <span className="text-sm text-muted-foreground">
                         {job.progress}%
                       </span>

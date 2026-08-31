@@ -68,7 +68,7 @@ export function TorrentDestinationOverride({
                     </Button>
                 </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="min-w-[280px]">
+                <DropdownMenuContent className="w-[min(20rem,calc(100vw-2rem))]">
                     <DropdownMenuLabel>Send this torrent to</DropdownMenuLabel>
                     <DropdownMenuSeparator />
 

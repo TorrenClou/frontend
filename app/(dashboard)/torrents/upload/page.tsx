@@ -109,7 +109,7 @@ export default function TorrentUploadPage() {
         <div className="mx-auto max-w-3xl space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold">Upload Torrents</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold">Upload Torrents</h1>
                 <p className="text-muted-foreground">
                     Add one or more .torrent files and analyse them together
                 </p>
