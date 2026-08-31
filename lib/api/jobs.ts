@@ -4,6 +4,7 @@ import {
     jobSchema,
     paginatedJobsSchema,
     jobStatisticsSchema,
+    jobQueueStatusSchema,
     paginatedJobTimelineSchema,
 } from '@/types/jobs'
 import type {
@@ -11,13 +12,14 @@ import type {
     PaginatedJobs,
     JobsQueryParams,
     JobStatistics,
+    JobQueueStatus,
     JobTimelineEntry,
     PaginatedJobTimeline,
     JobTimelineQueryParams,
 } from '@/types/jobs'
 
 // Re-export types for convenience
-export type { Job, PaginatedJobs, JobsQueryParams, JobStatistics, JobTimelineEntry, PaginatedJobTimeline, JobTimelineQueryParams }
+export type { Job, PaginatedJobs, JobsQueryParams, JobStatistics, JobQueueStatus, JobTimelineEntry, PaginatedJobTimeline, JobTimelineQueryParams }
 export { getJobsErrorMessage, jobsErrorMessages } from '@/types/jobs'
 
 /**
@@ -76,6 +78,17 @@ export async function getJobStatistics(): Promise<JobStatistics> {
         console.error('Job statistics validation error:', error)
         throw new Error('Invalid statistics data received from server. Please try again later.')
     }
+}
+
+/**
+ * Worker capacity and queue depth
+ * GET /api/jobs/queue-status
+ *
+ * Tells apart a job waiting for a free slot from one whose queue hand-off was lost.
+ */
+export async function getJobQueueStatus(): Promise<JobQueueStatus> {
+    const response = await apiClient.get<JobQueueStatus>('/jobs/queue-status')
+    return jobQueueStatusSchema.parse(response.data)
 }
 
 /**

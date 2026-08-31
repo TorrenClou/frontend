@@ -1,14 +1,14 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Clock, Loader2, PlayCircle } from 'lucide-react'
+import { Clock, Loader2, PlayCircle, Users } from 'lucide-react'
 import { JobStatus } from '@/types/enums'
+import { useJobQueueStatus } from '@/hooks/useJobs'
 import type { Job } from '@/types/jobs'
 
 /**
- * A job only sits in QUEUED or PENDING_UPLOAD until a worker claims it off the Redis
- * stream. Past a couple of minutes that hand-off has almost certainly been lost, and
- * nothing recovers it on its own — so surface the manual re-dispatch.
+ * How long a job can sit waiting before it is worth questioning, once capacity has
+ * been ruled out as the reason.
  */
 const STUCK_AFTER_MS = 2 * 60 * 1000
 
@@ -18,18 +18,65 @@ interface JobQueuedNoticeProps {
     isForceStarting?: boolean
 }
 
+/**
+ * Explains why a job has not started yet.
+ *
+ * There are two very different reasons a job sits in QUEUED, and conflating them is
+ * what made this notice actively misleading before:
+ *
+ *  - Every worker is busy. A download occupies its Hangfire worker for the entire
+ *    transfer, so worker count is a hard ceiling on concurrent torrents. The job is
+ *    waiting its turn and re-dispatching it does nothing — it goes back to the same
+ *    queue, behind the same jobs.
+ *  - The queue hand-off was lost. Nothing will ever pick the job up, and force
+ *    starting is exactly the fix.
+ *
+ * Force Start is only offered in the second case.
+ */
 export function JobQueuedNotice({ job, onForceStart, isForceStarting }: JobQueuedNoticeProps) {
+    const { data: queue } = useJobQueueStatus(job.canForceStart)
+
     if (!job.canForceStart) return null
 
     const status = job.status as JobStatus
     const isUploadPhase = status === JobStatus.PENDING_UPLOAD
 
-    // updatedAt moves on every write, so it approximates "entered this state".
     const since = job.updatedAt ?? job.createdAt
     const waitingMs = since ? Date.now() - new Date(since).getTime() : 0
-    const looksStuck = waitingMs >= STUCK_AFTER_MS
-
     const waitingLabel = formatDuration(waitingMs)
+
+    const capacityKnown = !!queue && queue.downloadCapacity > 0
+    const slotsFull = capacityKnown && !isUploadPhase && queue.downloadSlotsFull
+
+    // Only call it stuck once capacity has been ruled out. A full queue explains the
+    // wait completely, however long it has been.
+    const looksStuck = !slotsFull && waitingMs >= STUCK_AFTER_MS
+
+    if (slotsFull) {
+        const ahead = Math.max(0, queue.queuedDownloads - 1)
+
+        return (
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                    <Users className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div>
+                        <p className="text-sm font-medium">
+                            Waiting for a free download slot
+                            {waitingLabel ? ` · ${waitingLabel}` : ''}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                            All {queue.downloadCapacity} download slots are in use
+                            {ahead > 0
+                                ? `, and ${ahead} other ${ahead === 1 ? 'job is' : 'jobs are'} ahead of this one`
+                                : ''}
+                            . It starts automatically as soon as one finishes — starting it
+                            manually would only put it back in the same queue.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div
@@ -56,26 +103,30 @@ export function JobQueuedNotice({ job, onForceStart, isForceStarting }: JobQueue
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                         {looksStuck
-                            ? 'This is longer than it should take. The job may have been missed when it was queued — force starting hands it straight to a worker.'
-                            : 'A worker should claim this shortly. Force start it if it stays here.'}
+                            ? capacityKnown
+                                ? `A worker is free (${queue.activeDownloads} of ${queue.downloadCapacity} slots in use), so this job was most likely missed when it was queued. Force starting hands it straight to a worker.`
+                                : 'This is longer than it should take. If the job was missed when it was queued, force starting hands it straight to a worker.'
+                            : 'A worker should claim this shortly.'}
                     </p>
                 </div>
             </div>
 
-            <Button
-                variant={looksStuck ? 'default' : 'outline'}
-                size="sm"
-                onClick={onForceStart}
-                disabled={isForceStarting}
-                className="shrink-0"
-            >
-                {isForceStarting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <PlayCircle className="mr-2 h-4 w-4" />
-                )}
-                Force Start
-            </Button>
+            {looksStuck && (
+                <Button
+                    variant="default"
+                    size="sm"
+                    onClick={onForceStart}
+                    disabled={isForceStarting}
+                    className="shrink-0"
+                >
+                    {isForceStarting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                    )}
+                    Force Start
+                </Button>
+            )}
         </div>
     )
 }

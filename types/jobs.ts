@@ -110,6 +110,19 @@ export const paginatedJobsSchema = z.object({
     hasNextPage: z.boolean(),
 })
 
+/**
+ * Worker capacity and queue depth. A download holds its worker for the whole
+ * transfer, so capacity is a hard ceiling on concurrent torrents.
+ */
+export const jobQueueStatusSchema = z.object({
+    downloadCapacity: z.number().int().nonnegative(),
+    activeDownloads: z.number().int().nonnegative(),
+    queuedDownloads: z.number().int().nonnegative(),
+    uploadCapacity: z.number().int().nonnegative(),
+    activeUploads: z.number().int().nonnegative(),
+    downloadSlotsFull: z.boolean(),
+})
+
 export const jobStatisticsSchema = z.object({
     totalJobs: z.number().int().nonnegative(),
     activeJobs: z.number().int().nonnegative(),
@@ -201,6 +214,7 @@ export const paginatedJobTimelineSchema = z.object({
 export type Job = z.infer<typeof jobSchema>
 export type PaginatedJobs = z.infer<typeof paginatedJobsSchema>
 export type JobStatistics = z.infer<typeof jobStatisticsSchema>
+export type JobQueueStatus = z.infer<typeof jobQueueStatusSchema>
 export type JobTimelineEntry = z.infer<typeof jobTimelineEntrySchema>
 export type PaginatedJobTimeline = z.infer<typeof paginatedJobTimelineSchema>
 

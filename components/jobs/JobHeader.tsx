@@ -20,6 +20,7 @@ import type { Job } from '@/types/jobs'
 import { getJobStatusConfig } from './JobStatusConfig'
 import { JobStatus } from '@/types/enums'
 import { useJobsStore } from '@/stores/jobsStore'
+import { useJobQueueStatus } from '@/hooks/useJobs'
 
 interface JobHeaderProps {
     job: Job
@@ -40,6 +41,12 @@ export function JobHeader({
 }: JobHeaderProps) {
     const config = getJobStatusConfig(job.status as JobStatus)
     const { openCancelModal } = useJobsStore()
+    const { data: queue } = useJobQueueStatus(job.canForceStart)
+
+    // With every slot taken the job is waiting its turn, and re-dispatching only sends
+    // it back to the same queue. Offering the button there is what misled users before.
+    const slotsFull =
+        job.status === JobStatus.QUEUED && !!queue && queue.downloadSlotsFull
 
     return (
         <div className="flex flex-col gap-4">
@@ -76,7 +83,7 @@ export function JobHeader({
 
                 {/* Action buttons */}
                 <div className="flex gap-2 shrink-0">
-                    {job.canForceStart && onForceStart && (
+                    {job.canForceStart && onForceStart && !slotsFull && (
                         <TooltipProvider delayDuration={100}>
                             <Tooltip>
                                 <TooltipTrigger asChild>

@@ -7,6 +7,7 @@ import {
     getJobs,
     getJob,
     getJobStatistics,
+    getJobQueueStatus,
     getJobTimeline,
     retryJob,
     cancelJob,
@@ -29,6 +30,7 @@ export const jobsKeys = {
     details: () => [...jobsKeys.all, 'detail'] as const,
     detail: (id: number) => [...jobsKeys.details(), id] as const,
     statistics: () => [...jobsKeys.all, 'statistics'] as const,
+    queueStatus: () => [...jobsKeys.all, 'queue-status'] as const,
     timelines: () => [...jobsKeys.all, 'timeline'] as const,
     timeline: (id: number, params?: JobTimelineQueryParams) => [...jobsKeys.timelines(), id, params] as const,
 }
@@ -205,6 +207,23 @@ function handleJobActionError(error: unknown): string {
         return getJobsErrorMessage(extracted.code, extracted.message)
     }
     return extracted.message
+}
+
+/**
+ * Worker capacity and queue depth.
+ *
+ * Polled while a job is waiting, because the useful moment is when a slot frees up.
+ */
+export function useJobQueueStatus(enabled = true) {
+    const { status } = useSession()
+
+    return useQuery({
+        queryKey: jobsKeys.queueStatus(),
+        queryFn: getJobQueueStatus,
+        enabled: enabled && status === 'authenticated',
+        staleTime: 10 * 1000,
+        refetchInterval: 30 * 1000,
+    })
 }
 
 // ============================================
