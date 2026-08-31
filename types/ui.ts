@@ -8,8 +8,16 @@ export interface StatusIndicatorProps {
 export interface FileUploadProps {
     accept?: string
     maxSize?: number // in bytes
-    onFileSelect: (file: File | null) => void
+    /** Required in single mode. Ignored when `multiple` is set. */
+    onFileSelect?: (file: File | null) => void
     selectedFile?: File | null
+    /**
+     * Accept several files per drop/pick. The component stays a drop zone rather than
+     * switching to the single-file preview, and reports each accepted file through
+     * `onFilesSelect`. Files failing validation are listed instead of rejecting the drop.
+     */
+    multiple?: boolean
+    onFilesSelect?: (files: File[]) => void
     error?: string
     className?: string
     disabled?: boolean

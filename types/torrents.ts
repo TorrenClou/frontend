@@ -70,6 +70,46 @@ export const jobCreationResultSchema = z.object({
 export type JobCreationResult = z.infer<typeof jobCreationResultSchema>
 
 // ============================================
+// Batch Job Creation Schemas (start many at once)
+// ============================================
+
+export const createJobItemSchema = z.object({
+    torrentFileId: z.number(),
+    /** null means every file in the torrent */
+    selectedFilePaths: z.array(z.string()).nullable(),
+    /** overrides the batch destination for this torrent only */
+    storageProfileId: z.number().nullable().optional(),
+})
+
+export type CreateJobItem = z.infer<typeof createJobItemSchema>
+
+export const createJobsRequestSchema = z.object({
+    /** destination for items that do not set their own */
+    storageProfileId: z.number().nullable().optional(),
+    items: z.array(createJobItemSchema).min(1),
+})
+
+export type CreateJobsRequest = z.infer<typeof createJobsRequestSchema>
+
+export const jobCreationOutcomeSchema = z.object({
+    torrentFileId: z.number(),
+    jobId: z.number().nullable(),
+    success: z.boolean(),
+    errorCode: z.string().nullable(),
+    errorMessage: z.string().nullable(),
+})
+
+export type JobCreationOutcome = z.infer<typeof jobCreationOutcomeSchema>
+
+export const batchJobCreationResultSchema = z.object({
+    results: z.array(jobCreationOutcomeSchema),
+    succeededCount: z.number(),
+    failedCount: z.number(),
+})
+
+export type BatchJobCreationResult = z.infer<typeof batchJobCreationResultSchema>
+
+// ============================================
 // API Error Response Schema
 // ============================================
 
@@ -93,6 +133,14 @@ export const torrentErrorMessages: Record<string, string> = {
     Unauthorized: 'Please sign in to continue',
     AccessDenied: 'You do not have permission to perform this action',
     ActiveJobExists: 'An active job already exists for this torrent',
+    // Batch start
+    EmptyBatch: 'No torrents were provided',
+    BatchTooLarge: 'Too many torrents in one batch',
+    InvalidStorageProfile: 'No storage destination was selected',
+    JobAlreadyExists: 'This torrent already has an active job',
+    JobRetrying: 'This torrent has a job that is currently retrying',
+    StorageUnhealthy: 'That drive is not accepting uploads right now',
+    JobCreationFailed: 'This torrent could not be started',
 }
 
 export function getTorrentErrorMessage(code: string): string {

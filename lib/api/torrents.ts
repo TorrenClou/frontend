@@ -3,12 +3,15 @@ import apiClient from '../axios'
 import {
     torrentAnalysisResponseSchema,
     jobCreationResultSchema,
+    batchJobCreationResultSchema,
     type TorrentAnalysisResponse,
     type JobCreationResult,
+    type CreateJobsRequest,
+    type BatchJobCreationResult,
 } from '@/types/torrents'
 
 // Re-export types for convenience
-export type { TorrentAnalysisResponse, JobCreationResult }
+export type { TorrentAnalysisResponse, JobCreationResult, CreateJobsRequest, BatchJobCreationResult }
 export { getTorrentErrorMessage, torrentErrorMessages } from '@/types/torrents'
 
 /**
@@ -62,4 +65,24 @@ export async function createJob(
     )
 
     return jobCreationResultSchema.parse(response.data)
+}
+
+/**
+ * Start several analysed torrents in one call
+ * POST /api/torrents/create-jobs
+ *
+ * Each item carries its own file selection and may override the batch destination.
+ * The response reports every item individually — a rejected torrent (duplicate,
+ * already running, unreachable drive) does not stop the rest, so callers must read
+ * `results` rather than assume success.
+ */
+export async function createJobs(
+    request: CreateJobsRequest
+): Promise<BatchJobCreationResult> {
+    const response = await apiClient.post<BatchJobCreationResult>(
+        '/torrents/create-jobs',
+        request
+    )
+
+    return batchJobCreationResultSchema.parse(response.data)
 }
