@@ -168,6 +168,19 @@ export async function changeJobStorageProfile(
 }
 
 /**
+ * Re-dispatch a job stuck waiting to be picked up
+ * POST /api/jobs/{id}/force-start
+ *
+ * Only valid for QUEUED and PENDING_UPLOAD. Enqueues the work directly rather than
+ * republishing to the Redis stream, since a lost stream hand-off is the failure this
+ * recovers from.
+ */
+export async function forceStartJob(jobId: number): Promise<JobActionResponse> {
+    const response = await apiClient.post<JobActionResponse>(`/jobs/${jobId}/force-start`)
+    return response.data
+}
+
+/**
  * Cancel an active job
  * POST /api/jobs/{id}/cancel
  */

@@ -96,6 +96,8 @@ export const jobSchema = z.object({
     // Left undefined rather than defaulted: an absent field means "this server did not
     // tell us", which is not the same as "no". Callers derive the answer from status.
     canChangeStorageProfile: z.boolean().optional(),
+    // True while the job is waiting on a queue hand-off and can be re-dispatched.
+    canForceStart: z.boolean().optional().default(false),
 })
 
 export const paginatedJobsSchema = z.object({

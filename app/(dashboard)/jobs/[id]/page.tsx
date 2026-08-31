@@ -4,6 +4,7 @@ import {
     useJob,
     useRetryJob,
     useCancelJob,
+    useForceStartJob,
 } from '@/hooks/useJobs'
 import { JobStatus } from '@/types/enums'
 import { useParams } from 'next/navigation'
@@ -16,6 +17,7 @@ import {
     JobSuccessCard,
     JobDetailsCard,
     JobDestinationCard,
+    JobQueuedNotice,
     JobCancelModal,
     JobLoadingState,
     JobErrorState,
@@ -32,6 +34,7 @@ export default function JobDetailsPage() {
 
     const retryJobMutation = useRetryJob()
     const cancelJobMutation = useCancelJob()
+    const forceStartMutation = useForceStartJob()
 
     const handleRetry = () => {
         retryJobMutation.mutate({ jobId })
@@ -41,6 +44,10 @@ export default function JobDetailsPage() {
         retryJobMutation.mutate({ jobId, storageProfileId })
     }
 
+    const handleForceStart = () => {
+        forceStartMutation.mutate(jobId)
+    }
+
     const handleCancel = () => {
         cancelJobMutation.mutate(jobId, {
             onSuccess: () => setShowCancelModal(false),
@@ -48,6 +55,7 @@ export default function JobDetailsPage() {
     }
 
     const isRetrying = retryJobMutation.isPending
+    const isForceStarting = forceStartMutation.isPending
     const isCancelling = cancelJobMutation.isPending
 
     if (isLoading) {
@@ -71,13 +79,21 @@ export default function JobDetailsPage() {
             <JobHeader
                 job={job}
                 onRetry={handleRetry}
+                onForceStart={handleForceStart}
                 isRetrying={isRetrying}
+                isForceStarting={isForceStarting}
                 isCancelling={isCancelling}
             />
 
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Left: main content */}
                 <div className="lg:col-span-2 space-y-6">
+                    <JobQueuedNotice
+                        job={job}
+                        onForceStart={handleForceStart}
+                        isForceStarting={isForceStarting}
+                    />
+
                     {jobIsActive && <JobProgressCard job={job} />}
 
                     {jobHasFailed && job.errorMessage && (

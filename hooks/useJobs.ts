@@ -11,6 +11,7 @@ import {
     retryJob,
     cancelJob,
     changeJobStorageProfile,
+    forceStartJob,
 } from '@/lib/api/jobs'
 import { useJobsStore } from '@/stores/jobsStore'
 import type { JobsQueryParams, JobTimelineQueryParams } from '@/types/jobs'
@@ -266,6 +267,27 @@ export function useChangeJobStorageProfile() {
         onError: (error) => {
             const message = handleJobActionError(error)
             toast.error('Failed to change destination', { description: message })
+        },
+    })
+}
+
+/**
+ * Hook for re-dispatching a job stuck waiting to be picked up by a worker
+ */
+export function useForceStartJob() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: forceStartJob,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: jobsKeys.all })
+            toast.success('Job re-dispatched', {
+                description: 'A worker should pick it up shortly.',
+            })
+        },
+        onError: (error) => {
+            const message = handleJobActionError(error)
+            toast.error('Could not start job', { description: message })
         },
     })
 }

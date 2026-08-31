@@ -13,6 +13,7 @@ import {
     StopCircle,
     Loader2,
     ArrowLeft,
+    PlayCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import type { Job } from '@/types/jobs'
@@ -23,14 +24,18 @@ import { useJobsStore } from '@/stores/jobsStore'
 interface JobHeaderProps {
     job: Job
     onRetry?: () => void
+    onForceStart?: () => void
     isRetrying?: boolean
+    isForceStarting?: boolean
     isCancelling?: boolean
 }
 
 export function JobHeader({
     job,
     onRetry,
+    onForceStart,
     isRetrying,
+    isForceStarting,
     isCancelling,
 }: JobHeaderProps) {
     const config = getJobStatusConfig(job.status as JobStatus)
@@ -71,6 +76,33 @@ export function JobHeader({
 
                 {/* Action buttons */}
                 <div className="flex gap-2 shrink-0">
+                    {job.canForceStart && onForceStart && (
+                        <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={onForceStart}
+                                        disabled={isForceStarting}
+                                    >
+                                        {isForceStarting ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <PlayCircle className="mr-2 h-4 w-4" />
+                                        )}
+                                        Force Start
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="max-w-[240px]">
+                                        Hand this job straight to a worker. Use it when a job has
+                                        sat waiting far longer than it should.
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                     {job.canRetry && onRetry && (
                         <TooltipProvider delayDuration={100}>
                             <Tooltip>
