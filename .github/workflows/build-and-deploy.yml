@@ -1,0 +1,93 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  # Mirrors what the Dockerfile does, so a build that fails here would have failed
+  # in Dokploy too — the point is to find that out before production is touched.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        # BACKEND_URL is baked in at build time (output: 'standalone' serialises the
+        # resolved rewrites), but this artifact is only a gate — Dokploy builds its
+        # own image with the real value — so a placeholder is correct here.
+        env:
+          BACKEND_URL: http://localhost:47200
+          NEXT_TELEMETRY_DISABLED: 1
+        run: npm run build
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      # The frontend talks to the API on every page. Deploying it while the backend
+      # is mid-rollout is what put a new UI in front of an old API before, so wait
+      # for the API to answer first.
+      #
+      # This confirms the API is reachable, not that it is already running the
+      # matching commit — the two repos deploy independently and nothing correlates
+      # their versions. It closes the common window, not every one.
+      - name: Wait for the API to be reachable
+        env:
+          API_HEALTH_URL: ${{ secrets.API_HEALTH_URL }}
+        run: |
+          if [ -z "$API_HEALTH_URL" ]; then
+            echo "API_HEALTH_URL not set — skipping the readiness wait."
+            exit 0
+          fi
+
+          for attempt in $(seq 1 30); do
+            status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$API_HEALTH_URL" || echo 000)
+            if [ "$status" = "200" ]; then
+              echo "API healthy after ${attempt} attempt(s)."
+              exit 0
+            fi
+            echo "Attempt ${attempt}: API returned ${status}, retrying in 10s..."
+            sleep 10
+          done
+
+          # Deliberately non-fatal: a backend that is down is a reason to be careful,
+          # not a reason to permanently block frontend deploys.
+          echo "::warning::API did not become healthy in 5 minutes. Deploying anyway."
+
+      - name: Trigger Dokploy deployment
+        env:
+          DEPLOY_URL: ${{ secrets.DOKPLOY_DEPLOY_URL }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "::error::DOKPLOY_DEPLOY_URL is not set. Add it as a repository secret."
+            exit 1
+          fi
+
+          status=$(curl -sS -o /tmp/deploy.log -w '%{http_code}' -X POST "$DEPLOY_URL")
+          echo "Dokploy responded $status"
+          cat /tmp/deploy.log || true
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Dokploy deploy webhook returned $status"
+            exit 1
+          fi
