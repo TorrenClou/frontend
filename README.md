@@ -12,7 +12,7 @@ The Next.js 15 frontend for [TorrentClou](https://github.com/TorrenClou) — a s
 | React | 18 | UI library |
 | TypeScript | 5.6 | Type safety (strict mode) |
 | Tailwind CSS | 3.4 | Utility-first styling |
-| NextAuth.js | 5 (beta) | Authentication (credentials + Google OAuth) |
+| NextAuth.js | 5 (beta) | Authentication (email and password) |
 | React Query | 5 (TanStack) | Server state, caching, background refetching |
 | Zustand | 5 | Client-side state management |
 | Zod | 4 | Runtime schema validation |
@@ -82,15 +82,18 @@ Opens at `http://localhost:47100`. The backend API should be running at `http://
 
 ## Environment Variables
 
-| Variable | Type | Default | Description |
-|----------|------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | Build-time | `http://localhost:47200/api` | API base URL (used by browser) |
-| `NEXT_PUBLIC_BACKEND_URL` | Build-time | `http://localhost:47200` | Backend root URL (Google Drive OAuth callbacks) |
-| `BACKEND_URL` | Runtime | `http://localhost:47200` | Server-side API URL (SSR auth calls) |
-| `NEXTAUTH_SECRET` | Runtime | - | NextAuth encryption secret |
-| `NEXTAUTH_URL` | Runtime | `http://localhost:47100` | NextAuth canonical URL |
+All optional. The browser talks to the API through a same-origin `/proxy` rewrite, so the
+app works on any host or IP without being told its own address.
 
-> **Note:** `NEXT_PUBLIC_*` variables are baked into the JavaScript bundle at build time and cannot be changed at runtime.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKEND_URL` | `http://localhost:47200` | Where the API is. Server-side only. |
+| `NEXTAUTH_SECRET` | generated | Session encryption secret. The container generates and persists one. |
+| `NEXTAUTH_URL` | derived | Canonical URL. Derived from the request host unless set. |
+| `ALLOW_INSECURE_TLS` | `false` | Skip TLS verification when calling the API. Self-signed certificates only. |
+
+> There are no `NEXT_PUBLIC_*` variables. Nothing about the backend location is baked into
+> the browser bundle.
 
 ## Build
 
