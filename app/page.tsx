@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Loader2, CloudDownload, Check, Mail, Lock, Code } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { useSetupGate } from '@/hooks/useSetupGate'
 
 const features = [
   {
@@ -29,6 +30,7 @@ const features = [
 export default function LandingPage() {
   const router = useRouter()
   const { status } = useSession()
+  const checkingSetup = useSetupGate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -40,8 +42,10 @@ export default function LandingPage() {
     }
   }, [status, router])
 
-  // Show nothing while the session is resolving or redirecting to avoid flicker
-  if (status === 'loading' || status === 'authenticated') {
+  // Show nothing while the session is resolving or redirecting to avoid flicker.
+  // The setup check is included: on an unclaimed instance this page is about to redirect
+  // to the wizard, and flashing a login form nobody can use first is worse than a pause.
+  if (status === 'loading' || status === 'authenticated' || checkingSetup) {
     return null
   }
 
