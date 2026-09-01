@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FileText, Loader2, Mail, Lock } from 'lucide-react'
 import { toast } from 'sonner'
+import { useSetupGate } from '@/hooks/useSetupGate'
 
 export default function LoginPage() {
     const router = useRouter()
+    const checkingSetup = useSetupGate()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
@@ -43,6 +45,16 @@ export default function LoginPage() {
         } finally {
             setIsLoading(false)
         }
+    }
+
+    // An unclaimed instance redirects to the wizard from here, so hold the form back
+    // rather than flash a login nobody has credentials for yet.
+    if (checkingSetup) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+        )
     }
 
     return (
