@@ -20,6 +20,8 @@ import {
     useDownloadStorage,
     usePurgeDownloads,
 } from '@/hooks/useSettings'
+import { AccountCard } from '@/components/settings/AccountCard'
+import { TransfersCard } from '@/components/settings/TransfersCard'
 
 export default function SettingsPage() {
     const { data: settings, isLoading: settingsLoading } = useUserSettings()
@@ -49,6 +51,10 @@ export default function SettingsPage() {
                     Manage your account settings and storage
                 </p>
             </div>
+
+            <AccountCard />
+
+            <TransfersCard />
 
             {/* Downloads behaviour */}
             <Card>
