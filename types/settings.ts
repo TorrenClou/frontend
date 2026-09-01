@@ -19,6 +19,49 @@ export const updateUserSettingsRequestSchema = z.object({
 export type UpdateUserSettingsRequest = z.infer<typeof updateUserSettingsRequestSchema>
 
 // ============================================
+// System Settings (instance-wide)
+// ============================================
+
+export const systemSettingsSchema = z.object({
+    /** Reroute an upload to another healthy drive when its destination fails. */
+    enableFailover: z.boolean(),
+    /** Cap on automatic reroutes per job, so one job cannot walk every drive you own. */
+    maxFailoverAttempts: z.number(),
+    /** Consecutive upload failures before a drive is marked unhealthy. */
+    failureThreshold: z.number(),
+    healthCacheTtlSeconds: z.number(),
+    quotaHeadroomRatio: z.number(),
+    degradedFreeQuotaRatio: z.number(),
+    probeTimeoutSeconds: z.number(),
+
+    /** Concurrent transfers. A download holds its worker for the whole transfer. */
+    hangfireWorkerCount: z.number(),
+    enablePrometheus: z.boolean(),
+    enableTracing: z.boolean(),
+
+    /**
+     * Field names that only take effect after a restart. Sent by the server so the UI
+     * does not keep its own copy of the list in sync.
+     */
+    requiresRestart: z.array(z.string()),
+})
+
+export type SystemSettings = z.infer<typeof systemSettingsSchema>
+
+export const updateSystemSettingsRequestSchema = systemSettingsSchema.omit({
+    requiresRestart: true,
+})
+
+export type UpdateSystemSettingsRequest = z.infer<typeof updateSystemSettingsRequestSchema>
+
+export const changePasswordRequestSchema = z.object({
+    currentPassword: z.string().min(1, 'Enter your current password'),
+    newPassword: z.string().min(12, 'Password must be at least 12 characters'),
+})
+
+export type ChangePasswordRequest = z.infer<typeof changePasswordRequestSchema>
+
+// ============================================
 // Downloads Volume Maintenance
 // ============================================
 

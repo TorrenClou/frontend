@@ -6,10 +6,17 @@ import { toast } from 'sonner'
 import {
     getUserSettings,
     updateUserSettings,
+    getSystemSettings,
+    updateSystemSettings,
+    changePassword,
     getDownloadStorage,
     purgeDownloads,
 } from '@/lib/api/settings'
-import type { UpdateUserSettingsRequest } from '@/types/settings'
+import type {
+    UpdateUserSettingsRequest,
+    UpdateSystemSettingsRequest,
+    ChangePasswordRequest,
+} from '@/types/settings'
 import { extractApiError } from '@/lib/api/errors'
 import { jobsKeys } from './useJobs'
 
@@ -20,6 +27,7 @@ import { jobsKeys } from './useJobs'
 export const settingsKeys = {
     all: ['settings'] as const,
     user: () => [...settingsKeys.all, 'user'] as const,
+    system: () => [...settingsKeys.all, 'system'] as const,
     downloadStorage: () => [...settingsKeys.all, 'download-storage'] as const,
 }
 
@@ -33,6 +41,17 @@ export function useUserSettings() {
     return useQuery({
         queryKey: settingsKeys.user(),
         queryFn: getUserSettings,
+        enabled: status === 'authenticated',
+        staleTime: 60 * 1000,
+    })
+}
+
+export function useSystemSettings() {
+    const { status } = useSession()
+
+    return useQuery({
+        queryKey: settingsKeys.system(),
+        queryFn: getSystemSettings,
         enabled: status === 'authenticated',
         staleTime: 60 * 1000,
     })
@@ -71,6 +90,39 @@ export function useUpdateUserSettings() {
         onError: (error: unknown) => {
             const extracted = extractApiError(error)
             toast.error('Could not save settings', { description: extracted.message })
+        },
+    })
+}
+
+export function useUpdateSystemSettings() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (request: UpdateSystemSettingsRequest) => updateSystemSettings(request),
+
+        onSuccess: (settings) => {
+            queryClient.setQueryData(settingsKeys.system(), settings)
+            toast.success('Settings saved')
+        },
+
+        onError: (error: unknown) => {
+            const extracted = extractApiError(error)
+            toast.error('Could not save settings', { description: extracted.message })
+        },
+    })
+}
+
+export function useChangePassword() {
+    return useMutation({
+        mutationFn: (request: ChangePasswordRequest) => changePassword(request),
+
+        onSuccess: () => {
+            toast.success('Password changed')
+        },
+
+        onError: (error: unknown) => {
+            const extracted = extractApiError(error)
+            toast.error('Could not change password', { description: extracted.message })
         },
     })
 }

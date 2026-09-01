@@ -2,15 +2,27 @@
 import apiClient from '../axios'
 import {
     userSettingsSchema,
+    systemSettingsSchema,
     downloadStoragePreviewSchema,
     purgeDownloadsResultSchema,
     type UserSettings,
     type UpdateUserSettingsRequest,
+    type SystemSettings,
+    type UpdateSystemSettingsRequest,
+    type ChangePasswordRequest,
     type DownloadStoragePreview,
     type PurgeDownloadsResult,
 } from '@/types/settings'
 
-export type { UserSettings, UpdateUserSettingsRequest, DownloadStoragePreview, PurgeDownloadsResult }
+export type {
+    UserSettings,
+    UpdateUserSettingsRequest,
+    SystemSettings,
+    UpdateSystemSettingsRequest,
+    ChangePasswordRequest,
+    DownloadStoragePreview,
+    PurgeDownloadsResult,
+}
 
 /**
  * Current user preferences
@@ -53,4 +65,35 @@ export async function getDownloadStorage(): Promise<DownloadStoragePreview> {
 export async function purgeDownloads(): Promise<PurgeDownloadsResult> {
     const response = await apiClient.post<PurgeDownloadsResult>('/maintenance/downloads/purge')
     return purgeDownloadsResultSchema.parse(response.data)
+}
+
+/**
+ * Instance-wide settings
+ * GET /api/settings/system
+ */
+export async function getSystemSettings(): Promise<SystemSettings> {
+    const response = await apiClient.get<SystemSettings>('/settings/system')
+    return systemSettingsSchema.parse(response.data)
+}
+
+/**
+ * Update instance-wide settings
+ * PUT /api/settings/system
+ *
+ * Some fields only take effect on restart; the response names which in
+ * `requiresRestart`.
+ */
+export async function updateSystemSettings(
+    request: UpdateSystemSettingsRequest
+): Promise<SystemSettings> {
+    const response = await apiClient.put<SystemSettings>('/settings/system', request)
+    return systemSettingsSchema.parse(response.data)
+}
+
+/**
+ * Change the account password
+ * PUT /api/settings/password
+ */
+export async function changePassword(request: ChangePasswordRequest): Promise<void> {
+    await apiClient.put('/settings/password', request)
 }
