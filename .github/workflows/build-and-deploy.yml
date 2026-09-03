@@ -229,7 +229,10 @@ jobs:
         if: steps.release.outputs.is_release == 'true'
         run: |
           set -euo pipefail
-          image="ghcr.io/${{ github.repository }}/web"
+          # github.repository preserves the owner's casing ("TorrenClou/frontend"),
+          # and Docker rejects an uppercase repository name. The build job above
+          # never hit this because docker/metadata-action lowercases for you.
+          image="ghcr.io/$(echo "${{ github.repository }}" | tr "[:upper:]" "[:lower:]")/web"
           version="${{ steps.release.outputs.version }}"
           major_minor="${{ steps.release.outputs.major_minor }}"
           echo "Tagging ${image} as ${version} and ${major_minor}"
