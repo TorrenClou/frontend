@@ -1,0 +1,27 @@
+name: Release Please
+
+# Accumulates merged commits into a release pull request. Merging that PR tags
+# the release and publishes the notes; nothing is released by pushing to main.
+#
+# The version lives in .release-please-manifest.json and package.json. This repo
+# has never had a git tag, and package.json has sat at 0.1.0 since the first
+# commit — it is deliberately left there rather than bumped to match the product
+# version, because component versions are developer-facing provenance and the
+# number users pin is the combined image built in TorrenClou/deploy.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
