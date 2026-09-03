@@ -1,144 +1,71 @@
-# TorrentClou Frontend
+# TorrenClou Frontend
 
-The Next.js 15 frontend for [TorrentClou](https://github.com/TorrenClou) — a self-hosted cloud torrent management platform.
+The Next.js web app for [TorrenClou](https://tc.gitnasr.com) — self-hosted
+torrent-to-cloud.
 
-> **Just want to run the whole project?** See [TorrenClou/deploy](https://github.com/TorrenClou/deploy) for one-command setup.
+> **Just want to run it?** You do not need this repo.
+>
+> <!-- snippet:install-linux -->
+> ```bash
+> curl -fsSL https://raw.githubusercontent.com/TorrenClou/deploy/main/install.sh | bash
+> ```
+> <!-- /snippet -->
+>
+> Full documentation: **[tc.gitnasr.com/docs](https://tc.gitnasr.com/docs)**
 
-## Tech Stack
-
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| Next.js | 15 | React framework with App Router and SSR |
-| React | 18 | UI library |
-| TypeScript | 5.6 | Type safety (strict mode) |
-| Tailwind CSS | 3.4 | Utility-first styling |
-| NextAuth.js | 5 (beta) | Authentication (email and password) |
-| React Query | 5 (TanStack) | Server state, caching, background refetching |
-| Zustand | 5 | Client-side state management |
-| Zod | 4 | Runtime schema validation |
-| Radix UI | - | Accessible headless UI primitives |
-| Recharts | 3 | Dashboard charts and visualizations |
-| Axios | 1.7 | HTTP client |
-| React Hook Form | 7 | Form handling |
-| Sonner | 1.7 | Toast notifications |
-
-## Project Structure
+## What lives in this repo
 
 ```
 app/
-├── (auth)/              # Auth route group (login page)
-├── (dashboard)/         # Dashboard route group
-├── api/                 # API routes (NextAuth handlers)
-├── dashboard/           # Main dashboard page
-├── layout.tsx           # Root layout
-└── page.tsx             # Landing page
-
-components/
-├── jobs/                # Job management components
-├── layout/              # Sidebar, header, navigation
-├── providers/           # React Query, auth, theme providers
-├── shared/              # Reusable shared components
-├── storage/             # Google Drive & S3 config components
-└── ui/                  # Base UI primitives (Button, Dialog, etc.)
-
-hooks/                   # Custom React hooks
-lib/
-├── api/                 # API client functions (health, etc.)
-└── axios.ts             # Configured Axios instance
-stores/                  # Zustand stores
-types/                   # TypeScript types and Zod schemas
+├── (auth)/          Login and OAuth callback
+├── (setup)/         First-run wizard — creates the one admin account
+├── (dashboard)/     Torrents, jobs, storage profiles
+├── dashboard/       Dashboard shell, files, settings
+└── api/auth/        NextAuth route handler
+components/  ·  hooks/  ·  lib/  ·  stores/  ·  types/
 ```
 
-## Prerequisites
+Two things worth knowing before you change anything here:
 
-- [Node.js 20+](https://nodejs.org/)
-- [Yarn](https://yarnpkg.com/) (or npm)
-- Running backend API (see [TorrenClou/backend](https://github.com/TorrenClou/backend))
+- **There are no `NEXT_PUBLIC_*` variables, deliberately.** The browser calls the
+  relative path `/proxy/api`, and the server resolves it to the backend. The API
+  address is never baked into client bundles, so one build works against any
+  backend.
+- **Auth is credentials-only.** `auth.config.ts` registers a single `Credentials`
+  provider that posts to the backend. Google is a *storage* provider, connected
+  per-user inside the app — it is not a sign-in method.
 
-## Development Setup
-
-### 1. Clone and configure
+## Developing
 
 ```bash
 git clone https://github.com/TorrenClou/frontend.git
 cd frontend
-cp .env.example .env.local
-# Edit .env.local with your values
+npm ci
+cp .env.example .env.local   # optional — see the file, everything has a default
+npm run dev
 ```
 
-### 2. Install dependencies
+The dev server listens on `http://localhost:3000` and expects the API on
+`http://localhost:47200`. Start the backend first — see
+[TorrenClou/backend](https://github.com/TorrenClou/backend).
+
+Sign-in needs `NEXTAUTH_SECRET`; it is the only value without a fallback.
+Every configuration key is documented at
+[tc.gitnasr.com/docs](https://tc.gitnasr.com/docs/configuration).
 
 ```bash
-yarn install
+npm run build        # production build (output: standalone)
+npx tsc --noEmit     # type check, same gate CI runs
 ```
 
-### 3. Start dev server
+## Repositories
 
-```bash
-yarn dev
-```
-
-Opens at `http://localhost:47100`. The backend API should be running at `http://localhost:47200`.
-
-## Environment Variables
-
-All optional. The browser talks to the API through a same-origin `/proxy` rewrite, so the
-app works on any host or IP without being told its own address.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `BACKEND_URL` | `http://localhost:47200` | Where the API is. Server-side only. |
-| `NEXTAUTH_SECRET` | generated | Session encryption secret. The container generates and persists one. |
-| `NEXTAUTH_URL` | derived | Canonical URL. Derived from the request host unless set. |
-| `ALLOW_INSECURE_TLS` | `false` | Skip TLS verification when calling the API. Self-signed certificates only. |
-
-> There are no `NEXT_PUBLIC_*` variables. Nothing about the backend location is baked into
-> the browser bundle.
-
-## Build
-
-```bash
-yarn build
-```
-
-The project uses `output: 'standalone'` in `next.config.js` for Docker-optimized builds. The standalone output is located at `.next/standalone/server.js`.
-
-## Key Features
-
-### Authentication
-- Credential-based login via NextAuth.js v5
-- Google OAuth integration
-- JWT tokens stored in encrypted session cookies
-- Server-side auth validation on protected routes via middleware
-
-### Dashboard
-- Real-time torrent download progress
-- Job management (queue, retry, cancel)
-- Storage usage statistics with charts
-
-### Storage Management
-- Google Drive: OAuth credential management, auto-sync configuration
-- S3: Bucket configuration for AWS, Backblaze B2, MinIO, etc.
-
-### UI/UX
-- Responsive design (desktop + mobile)
-- Dark/light theme toggle via `next-themes`
-- Toast notifications for async operations
-- Accessible components via Radix UI primitives
-
-## CI/CD
-
-Merging to `main` triggers a dispatch to the [deploy repo](https://github.com/TorrenClou/deploy), which builds the combined all-in-one Docker image containing both frontend and backend.
-
-See `.github/workflows/dispatch-combined-build.yml`.
-
-## Related Repositories
-
-| Repository | Description |
-|-----------|-------------|
-| [TorrenClou/backend](https://github.com/TorrenClou/backend) | .NET 9.0 API and background workers |
-| [TorrenClou/deploy](https://github.com/TorrenClou/deploy) | All-in-one Docker image, CI/CD, run scripts |
+| Repository | Contents |
+|------------|----------|
+| [backend](https://github.com/TorrenClou/backend) | .NET 9 API and workers |
+| [website](https://github.com/TorrenClou/website) | Documentation site — the canonical docs live here |
+| [deploy](https://github.com/TorrenClou/deploy) | All-in-one image, installer, CI |
 
 ## License
 
-See [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/TorrenClou/frontend/blob/main/LICENSE).
