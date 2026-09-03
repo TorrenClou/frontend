@@ -5,18 +5,11 @@ const nextConfig = {
   images: {
     domains: ['lh3.googleusercontent.com'],
   },
-  async rewrites() {
-    // Proxy /proxy/* → backend, resolved server-side using BACKEND_URL (runtime env var)
-    // This allows the browser to use relative URLs (/proxy/api/...) that work on ANY server IP
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:47200'
-    return [
-      {
-        source: '/proxy/:path*',
-        destination: `${backendUrl}/:path*`,
-      },
-    ]
-  },
+  // The /proxy/* rewrite that used to live here is now a route handler at
+  // app/proxy/[...path]/route.ts. With output: 'standalone', Next serialises
+  // resolved rewrite destinations into .next/required-server-files.json at
+  // build time, so BACKEND_URL was baked into the image and could not be
+  // changed at runtime. The route handler reads it per request instead.
 }
 
 module.exports = nextConfig
-

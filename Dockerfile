@@ -13,12 +13,11 @@ COPY . .
 # next.config.js sets output:'standalone', so the build emits a self-contained
 # server bundle in .next/standalone that needs no node_modules at runtime.
 #
-# BACKEND_URL must be supplied at BUILD time, not runtime: standalone builds
-# serialise the resolved next.config.js (rewrites included) into
-# .next/required-server-files.json, so the /proxy/* destination is baked into
-# the image. Passing it only at runtime silently leaves the localhost fallback.
-ARG BACKEND_URL=http://localhost:47200
-ENV BACKEND_URL=$BACKEND_URL
+# BACKEND_URL is deliberately NOT set here. It used to be a build arg, because
+# next.config.js resolved the /proxy/* rewrite at build time and standalone
+# builds serialise that into .next/required-server-files.json. The proxy is now
+# a route handler that reads the variable per request, so the address is a
+# runtime concern and one image works against any backend.
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -39,8 +38,9 @@ COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 
-# BACKEND_URL is read at runtime by next.config.js rewrites, so the same image
-# works against any backend without a rebuild.
+# BACKEND_URL is read per request by app/proxy/[...path]/route.ts, so the same
+# image works against any backend without a rebuild. Defaults to
+# http://localhost:47200 when unset.
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=5 \
     CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/ || exit 1
 
