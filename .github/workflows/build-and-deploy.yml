@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Publish
 
 on:
   push:
@@ -15,8 +15,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Mirrors what the Dockerfile does, so a build that fails here would have failed
-  # in Dokploy too — the point is to find that out before production is touched.
+  # Mirrors what the Dockerfile does, so a compile or type error surfaces here
+  # rather than partway through building the image.
   build:
     runs-on: ubuntu-latest
     steps:
@@ -103,58 +103,46 @@ jobs:
           cache-to: type=gha,mode=max,scope=web
           platforms: linux/amd64,linux/arm64
 
-  deploy:
+  # Optional, and provider-agnostic.
+  #
+  # This used to wait on a Dokploy health URL and then POST to a hardcoded
+  # Dokploy webhook, failing the whole workflow when the secret was missing or
+  # the response was not exactly 200. It had been failing every push to main
+  # with "Branch Not Match" (301), which made good builds look broken.
+  #
+  # TorrenClou is not tied to one host. This repo publishes an image; Dokploy,
+  # Coolify, Railway, Render and a plain docker host all pull it, and most
+  # redeploy on their own.
+  #
+  # It never fails the workflow: by the time it runs the image is published and
+  # the build genuinely succeeded, so a webhook that is misconfigured or briefly
+  # down is not a reason to mark that build red.
+  notify-deploy:
     needs: image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      # The frontend talks to the API on every page. Deploying it while the backend
-      # is mid-rollout is what put a new UI in front of an old API before, so wait
-      # for the API to answer first.
-      #
-      # This confirms the API is reachable, not that it is already running the
-      # matching commit — the two repos deploy independently and nothing correlates
-      # their versions. It closes the common window, not every one.
-      - name: Wait for the API to be reachable
+      - name: Notify the deploy webhook, if one is configured
         env:
-          API_HEALTH_URL: ${{ secrets.API_HEALTH_URL }}
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
-          if [ -z "$API_HEALTH_URL" ]; then
-            echo "API_HEALTH_URL not set — skipping the readiness wait."
+          set -uo pipefail
+
+          if [ -z "${DEPLOY_WEBHOOK_URL}" ]; then
+            echo "No DEPLOY_WEBHOOK_URL secret set - nothing to notify."
+            echo "The image is published; most platforms redeploy by pulling it."
             exit 0
           fi
 
-          for attempt in $(seq 1 30); do
-            status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$API_HEALTH_URL" || echo 000)
-            if [ "$status" = "200" ]; then
-              echo "API healthy after ${attempt} attempt(s)."
-              exit 0
-            fi
-            echo "Attempt ${attempt}: API returned ${status}, retrying in 10s..."
-            sleep 10
-          done
+          status=$(curl -sS -L -o /tmp/deploy.log -w '%{http_code}'             -X POST "${DEPLOY_WEBHOOK_URL}" || echo 000)
+          echo "Webhook responded ${status}"
+          cat /tmp/deploy.log 2>/dev/null || true
 
-          # Deliberately non-fatal: a backend that is down is a reason to be careful,
-          # not a reason to permanently block frontend deploys.
-          echo "::warning::API did not become healthy in 5 minutes. Deploying anyway."
+          case "${status}" in
+            2*) echo "Deploy triggered." ;;
+            *)  echo "::warning::Deploy webhook returned ${status}. The image published successfully; only the redeploy notification failed." ;;
+          esac
 
-      - name: Trigger Dokploy deployment
-        env:
-          DEPLOY_URL: ${{ secrets.DOKPLOY_DEPLOY_URL }}
-        run: |
-          if [ -z "$DEPLOY_URL" ]; then
-            echo "::error::DOKPLOY_DEPLOY_URL is not set. Add it as a repository secret."
-            exit 1
-          fi
-
-          status=$(curl -sS -o /tmp/deploy.log -w '%{http_code}' -X POST "$DEPLOY_URL")
-          echo "Dokploy responded $status"
-          cat /tmp/deploy.log || true
-
-          if [ "$status" != "200" ]; then
-            echo "::error::Dokploy deploy webhook returned $status"
-            exit 1
-          fi
 
   # Was its own workflow on the same push:main trigger, so it raced this one and
   # the combined image could be rebuilt from a commit that had just failed to
