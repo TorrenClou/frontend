@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
-    # Release Please pushes these; without the trigger the semver tags below
-    # can never be produced.
+    # Fires only for a tag pushed by a human. Release Please tags with
+    # GITHUB_TOKEN, and GitHub does not start runs from that token's events —
+    # see the tag-release job for how automated releases get their semver tags.
     tags:
       - "v*"
   pull_request:
@@ -176,3 +177,61 @@ jobs:
               "ref": "${{ github.ref }}",
               "actor": "${{ github.actor }}"
             }
+
+  # Applies the semver tags to a release build.
+  #
+  # The tag trigger above cannot do this on its own. Release Please creates its
+  # tag with GITHUB_TOKEN, and GitHub deliberately does not start workflow runs
+  # from events raised by that token, so `on: push: tags` never fires for an
+  # automated release. Verified the hard way: backend v1.1.0 was tagged and
+  # released, and zero workflow runs started for that tag.
+  #
+  # This runs in the same workflow as the build it is tagging, so the image
+  # already exists, and re-tags it by digest — no rebuild, and the semver tag
+  # points at exactly the artifact that was built for that commit.
+  tag-release:
+    needs: image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Is this a release commit?
+        id: release
+        run: |
+          set -euo pipefail
+          # Release Please touches the manifest and nothing else does.
+          if git diff --name-only HEAD^ HEAD | grep -qx '.release-please-manifest.json'; then
+            version=$(jq -r '.["."]' .release-please-manifest.json)
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+            echo "version=${version}" >> "$GITHUB_OUTPUT"
+            echo "major_minor=${version%.*}" >> "$GITHUB_OUTPUT"
+            echo "Release commit for ${version}"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+            echo "Not a release commit; nothing to tag."
+          fi
+
+      - name: Log in to GitHub Container Registry
+        if: steps.release.outputs.is_release == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply semver tags
+        if: steps.release.outputs.is_release == 'true'
+        run: |
+          set -euo pipefail
+          image="ghcr.io/${{ github.repository }}/web"
+          version="${{ steps.release.outputs.version }}"
+          major_minor="${{ steps.release.outputs.major_minor }}"
+          echo "Tagging ${image} as ${version} and ${major_minor}"
+          docker buildx imagetools create             --tag "${image}:${version}"             --tag "${image}:${major_minor}"             "${image}:sha-${{ github.sha }}"
+
