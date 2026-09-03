@@ -233,5 +233,8 @@ jobs:
           version="${{ steps.release.outputs.version }}"
           major_minor="${{ steps.release.outputs.major_minor }}"
           echo "Tagging ${image} as ${version} and ${major_minor}"
-          docker buildx imagetools create             --tag "${image}:${version}"             --tag "${image}:${major_minor}"             "${image}:sha-${{ github.sha }}"
+          docker buildx imagetools create \
+            --tag "${image}:${version}" \
+            --tag "${image}:${major_minor}" \
+            "${image}:sha-${{ github.sha }}"
 
