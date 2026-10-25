@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0] - 2026-10-25
+
+* ci: simplify CI/CD pipeline with direct automatic SemVer releases on main (cea91f0)
+* feat: rebrand to TorrentDrive, add AI-SEO & ISP-blind torrent engine, and upgrade UI/PaaS/docs (3ece0d2)
+* ci: stop tying this repo to one hosting provider (#12) (c19afd7)
+* chore: remove dead code and the second lockfile (#11) (e13d8cd)
+
 ## [0.1.2](https://github.com/TorrentDrive/frontend/compare/v0.1.1...v0.1.2) (2026-09-03)
 
 
