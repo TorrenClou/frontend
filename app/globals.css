@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* DARK MODE ONLY - TorreClou Professional Dark Theme */
+    /* DARK MODE ONLY - TorrentDrive Professional Dark Theme */
 
     /* Background: surface-a0 #121212 */
     --background: 0 0% 7%;
@@ -28,7 +28,7 @@
 
     /* Muted: surface-a20 #3f3f3f */
     --muted: 0 0% 25%;
-    --muted-foreground: 0 0% 55%;
+    --muted-foreground: 0 0% 62%;
 
     /* Accent: primary-a10 #3c9483 */
     --accent: 165 43% 41%;
@@ -54,11 +54,12 @@
 
   html,
   body {
-    @apply h-screen overflow-hidden;
+    @apply min-h-screen;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
@@ -73,13 +74,13 @@
   }
 
   .animate-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(6px);
     }
 
     to {

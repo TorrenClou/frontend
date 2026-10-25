@@ -163,7 +163,7 @@ export default function NewStoragePage() {
                         <div className="text-sm text-muted-foreground">
                             <p className="font-medium text-foreground">About Storage Profiles</p>
                             <p className="mt-1">
-                                Storage profiles allow TorreClou to upload downloaded files directly to your cloud storage.
+                                Storage profiles allow TorrentDrive to upload downloaded files directly to your cloud storage.
                                 Your credentials are encrypted and stored securely.
                             </p>
                         </div>

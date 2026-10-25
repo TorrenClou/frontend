@@ -99,7 +99,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center w-16 h-16 rounded-xl gradient-primary shadow-[0_0_20px_rgba(18,135,117,0.25)]">
               <CloudDownload className="w-8 h-8 text-white" />
             </div>
-            <span className="text-2xl font-bold tracking-tight">TorrenClou</span>
+            <span className="text-2xl font-bold tracking-tight">TorrentDrive</span>
           </div>
 
           {/* Headline */}
@@ -224,7 +224,7 @@ export default function LandingPage() {
           {/* Footer */}
           <div className="mt-6 text-center">
             <a
-              href="https://github.com/torrenclou/torrenclou"
+              href="https://github.com/torrentdrive/torrentdrive"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"

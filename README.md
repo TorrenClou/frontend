@@ -1,13 +1,13 @@
-# TorrenClou Frontend
+# TorrentDrive Frontend
 
-The Next.js web app for [TorrenClou](https://tc.gitnasr.com) — self-hosted
+The Next.js web app for [TorrentDrive](https://tc.gitnasr.com) — self-hosted
 torrent-to-cloud.
 
 > **Just want to run it?** You do not need this repo.
 >
 > <!-- snippet:install-linux -->
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/TorrenClou/deploy/main/install.sh | bash
+> curl -fsSL https://raw.githubusercontent.com/TorrentDrive/deploy/main/install.sh | bash
 > ```
 > <!-- /snippet -->
 >
@@ -38,7 +38,7 @@ Two things worth knowing before you change anything here:
 ## Developing
 
 ```bash
-git clone https://github.com/TorrenClou/frontend.git
+git clone https://github.com/TorrentDrive/frontend.git
 cd frontend
 npm ci
 cp .env.example .env.local   # optional — see the file, everything has a default
@@ -47,7 +47,7 @@ npm run dev
 
 The dev server listens on `http://localhost:3000` and expects the API on
 `http://localhost:47200`. Start the backend first — see
-[TorrenClou/backend](https://github.com/TorrenClou/backend).
+[TorrentDrive/backend](https://github.com/TorrentDrive/backend).
 
 Sign-in needs `NEXTAUTH_SECRET`; it is the only value without a fallback.
 Every configuration key is documented at
@@ -62,10 +62,10 @@ npx tsc --noEmit     # type check, same gate CI runs
 
 | Repository | Contents |
 |------------|----------|
-| [backend](https://github.com/TorrenClou/backend) | .NET 9 API and workers |
-| [website](https://github.com/TorrenClou/website) | Documentation site — the canonical docs live here |
-| [deploy](https://github.com/TorrenClou/deploy) | All-in-one image, installer, CI |
+| [backend](https://github.com/TorrentDrive/backend) | .NET 9 API and workers |
+| [website](https://github.com/TorrentDrive/website) | Documentation site — the canonical docs live here |
+| [deploy](https://github.com/TorrentDrive/deploy) | All-in-one image, installer, CI |
 
 ## License
 
-MIT — see [LICENSE](https://github.com/TorrenClou/frontend/blob/main/LICENSE).
+MIT — see [LICENSE](https://github.com/TorrentDrive/frontend/blob/main/LICENSE).

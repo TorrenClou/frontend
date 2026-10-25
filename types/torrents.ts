@@ -40,6 +40,7 @@ export const torrentAnalysisResponseSchema = z.object({
     fileName: z.string(),
     infoHash: z.string(),
     totalSizeInBytes: z.number(),
+    isPrivate: z.boolean().optional(),
     files: z.array(torrentFileSchema),
     torrentHealth: torrentHealthMeasurementsSchema,
 })

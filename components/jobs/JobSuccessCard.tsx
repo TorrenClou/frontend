@@ -12,27 +12,24 @@ interface JobSuccessCardProps {
 
 export function JobSuccessCard({ job }: JobSuccessCardProps) {
     return (
-        <Card className="border-teal-secondary/50 bg-teal-secondary/5">
+        <Card className="border-success/40 bg-success/5">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-teal-secondary">
+                <CardTitle className="flex items-center gap-2 text-success-medium">
                     <CheckCircle className="h-5 w-5" />
-                    Download Complete
+                    Transfer Complete
                 </CardTitle>
                 <CardDescription>
-                    Your files have been uploaded to {job.storageProfileName}
+                    Your files have been uploaded to {job.storageProfileName || 'your cloud storage'}
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <Button asChild>
-                    <Link href="https://drive.google.com" target="_blank">
+            <CardContent className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" asChild>
+                    <Link href={`/storage/${job.storageProfileId}`}>
                         <HardDrive className="mr-2 h-4 w-4" />
-                        Open in {job.storageProfileName}
+                        View {job.storageProfileName || 'Storage Profile'}
                     </Link>
                 </Button>
             </CardContent>
         </Card>
     )
 }
-
-
-

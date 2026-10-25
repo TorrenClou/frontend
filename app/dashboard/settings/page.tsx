@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import {
     Settings as SettingsIcon,
@@ -32,9 +33,9 @@ export default function SettingsPage() {
 
     const [confirmingPurge, setConfirmingPurge] = useState(false)
 
-    const handleToggleDeleteAfterUpload = () => {
+    const handleToggleDeleteAfterUpload = (checked: boolean) => {
         if (!settings) return
-        updateSettings.mutate({ deleteAfterUpload: !settings.deleteAfterUpload })
+        updateSettings.mutate({ deleteAfterUpload: checked })
     }
 
     const handlePurge = () => {
@@ -74,16 +75,9 @@ export default function SettingsPage() {
                             <span className="text-sm">Loading settings…</span>
                         </div>
                     ) : (
-                        <label className="flex cursor-pointer items-start gap-3">
-                            <input
-                                type="checkbox"
-                                className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-border accent-primary"
-                                checked={settings?.deleteAfterUpload ?? true}
-                                disabled={updateSettings.isPending}
-                                onChange={handleToggleDeleteAfterUpload}
-                            />
-                            <span>
-                                <span className="text-sm font-medium">
+                        <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background/40 p-3.5">
+                            <label htmlFor="delete-after-upload" className="cursor-pointer space-y-0.5">
+                                <span className="block text-sm font-medium">
                                     Delete downloads after a successful upload
                                 </span>
                                 <span className="mt-0.5 block text-xs text-muted-foreground">
@@ -91,11 +85,19 @@ export default function SettingsPage() {
                                     storage. Turn this off to keep local copies — you can still
                                     reclaim them below.
                                 </span>
-                            </span>
-                            {updateSettings.isPending && (
-                                <Loader2 className="mt-1 h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
-                            )}
-                        </label>
+                            </label>
+                            <div className="flex shrink-0 items-center gap-2">
+                                {updateSettings.isPending && (
+                                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                )}
+                                <Switch
+                                    id="delete-after-upload"
+                                    checked={settings?.deleteAfterUpload ?? true}
+                                    disabled={updateSettings.isPending}
+                                    onCheckedChange={handleToggleDeleteAfterUpload}
+                                />
+                            </div>
+                        </div>
                     )}
                 </CardContent>
             </Card>

@@ -182,7 +182,7 @@ export function FileUpload({
                             ? 'border-primary bg-primary/5'
                             : 'border-border hover:border-primary/50',
                         disabled && 'cursor-not-allowed opacity-50',
-                        displayError && 'border-sage'
+                        displayError && 'border-danger'
                     )}
                 >
                     <input
@@ -237,7 +237,7 @@ export function FileUpload({
             )}
 
             {displayError && (
-                <div className="flex items-center gap-2 text-sm text-sage">
+                <div className="flex items-center gap-2 text-sm text-danger-medium">
                     <AlertCircle className="h-4 w-4" />
                     <span>{displayError}</span>
                 </div>

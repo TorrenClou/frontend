@@ -6,10 +6,6 @@ import { NextAuthSessionProvider } from '@/components/providers/session-provider
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from 'sonner'
 
-// Vendored rather than fetched with next/font/google, which downloads from
-// Google Fonts during `next build`. That made the build depend on a third
-// party at build time and failed outright on arm64, where the request is slow
-// enough under emulation to time out. See app/fonts/README.md.
 const inter = localFont({
   src: './fonts/inter-latin-variable.woff2',
   weight: '100 900',
@@ -20,8 +16,13 @@ const inter = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'TorrenClou - Torrent to Cloud',
-  description: 'Download torrents directly to your Google Drive',
+  title: {
+    default: 'TorrentDrive — ISP-Blind Torrent to Google Drive & S3',
+    template: '%s — TorrentDrive',
+  },
+  description:
+    'Self-hosted ISP-blind torrent-to-Google Drive and S3 cloud downloader with selective file picking and automatic storage failover.',
+  applicationName: 'TorrentDrive',
 }
 
 export default function RootLayout({
@@ -44,5 +45,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-

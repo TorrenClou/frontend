@@ -5,17 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Switch } from '@/components/ui/switch'
 import { Gauge, Loader2 } from 'lucide-react'
 import { useSystemSettings, useUpdateSystemSettings } from '@/hooks/useSettings'
 
-/**
- * Instance-wide transfer and routing settings.
- *
- * These were environment variables until now, which meant editing a file and recreating
- * the container to change a retry count. The fields the backend flags in `requiresRestart`
- * are labelled as such — they are read once at process start, and silently accepting a
- * change that will not take effect is the confusing part worth avoiding.
- */
 export function TransfersCard() {
     const { data: settings, isLoading } = useSystemSettings()
     const update = useUpdateSystemSettings()
@@ -72,20 +65,19 @@ export function TransfersCard() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-                <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                        type="checkbox"
-                        checked={enableFailover}
-                        onChange={(e) => setEnableFailover(e.target.checked)}
-                        className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                    />
-                    <span>
+                <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background/40 p-3.5">
+                    <label htmlFor="enable-failover" className="cursor-pointer space-y-0.5">
                         <span className="block text-sm font-medium">Reroute failed uploads</span>
                         <span className="block text-xs text-muted-foreground">
-                            Send a job to another healthy drive instead of failing it.
+                            Send a job to another healthy drive instead of failing it when the destination becomes unavailable.
                         </span>
-                    </span>
-                </label>
+                    </label>
+                    <Switch
+                        id="enable-failover"
+                        checked={enableFailover}
+                        onCheckedChange={setEnableFailover}
+                    />
+                </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                     <NumberField
@@ -179,7 +171,7 @@ function NumberField({
                 value={value}
                 disabled={disabled}
                 onChange={(e) => onChange(e.target.value)}
-                className="max-w-[120px]"
+                className="max-w-[120px] font-mono"
             />
             <p className="text-xs text-muted-foreground">{hint}</p>
         </div>

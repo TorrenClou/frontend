@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -223,19 +224,21 @@ export function JobDestinationCard({ job, className }: JobDestinationCardProps) 
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <label className="flex cursor-pointer items-start gap-2 text-sm text-muted-foreground">
-                            <input
-                                type="checkbox"
-                                className="mt-0.5"
-                                checked={pinned}
-                                disabled={changeDestination.isPending}
-                                onChange={handleTogglePin}
-                            />
-                            <span>
+                        <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-background/40 p-3">
+                            <label
+                                htmlFor={`pin-destination-${job.id}`}
+                                className="cursor-pointer text-xs text-muted-foreground"
+                            >
                                 Pin to this drive — fail instead of moving the upload elsewhere if it
                                 becomes unavailable.
-                            </span>
-                        </label>
+                            </label>
+                            <Switch
+                                id={`pin-destination-${job.id}`}
+                                checked={pinned}
+                                disabled={changeDestination.isPending}
+                                onCheckedChange={handleTogglePin}
+                            />
+                        </div>
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">

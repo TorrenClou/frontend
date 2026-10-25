@@ -21,3 +21,5 @@ export function useHealth() {
         retry: 1,
     })
 }
+
+export const useHealthReady = useHealth

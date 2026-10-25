@@ -20,6 +20,7 @@ import {
     ChevronRight,
     X,
     AlertCircle,
+    Lock,
 } from 'lucide-react'
 import { formatFileSize, formatInfoHash } from '@/lib/utils/formatters'
 import { toast } from 'sonner'
@@ -29,17 +30,17 @@ import { getItemSelectedSize, type TorrentBatchItem } from '@/stores/torrentStor
 export function getFileIcon(path: string) {
     const ext = path.split('.').pop()?.toLowerCase() ?? ''
     if (ext === 'pdf')
-        return <FileText className="h-[18px] w-[18px] shrink-0 text-red-400" />
+        return <FileText className="h-[18px] w-[18px] shrink-0 text-danger-light" />
     if (['iso', 'img', 'dmg'].includes(ext))
-        return <Disc className="h-[18px] w-[18px] shrink-0 text-purple-400" />
+        return <Disc className="h-[18px] w-[18px] shrink-0 text-primary-light" />
     if (['zip', 'tar', 'gz', 'rar', '7z'].includes(ext))
-        return <Archive className="h-[18px] w-[18px] shrink-0 text-yellow-400" />
+        return <Archive className="h-[18px] w-[18px] shrink-0 text-warning-light" />
     if (['mp4', 'mkv', 'avi', 'mov'].includes(ext))
-        return <Film className="h-[18px] w-[18px] shrink-0 text-blue-400" />
+        return <Film className="h-[18px] w-[18px] shrink-0 text-info-light" />
     if (['mp3', 'flac', 'wav'].includes(ext))
-        return <Music2 className="h-[18px] w-[18px] shrink-0 text-pink-400" />
+        return <Music2 className="h-[18px] w-[18px] shrink-0 text-primary" />
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext))
-        return <ImageIcon className="h-[18px] w-[18px] shrink-0 text-green-400" />
+        return <ImageIcon className="h-[18px] w-[18px] shrink-0 text-success-light" />
     return <File className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
 }
 
@@ -149,6 +150,16 @@ export function TorrentReviewCard({
                     {health.healthScore}%
                 </span>
 
+                {analysis.isPrivate && (
+                    <Badge
+                        variant="outline"
+                        className="shrink-0 border-info/40 bg-info/10 text-info-light"
+                        title="BEP 27 Private Torrent — DHT, PEX, LPD, and public trackers are disabled"
+                    >
+                        <Lock className="mr-1 h-3 w-3" />
+                        Private
+                    </Badge>
+                )}
                 {item.status === 'duplicate' && (
                     <Badge variant="outline" className="shrink-0 border-warning text-warning">
                         Duplicate

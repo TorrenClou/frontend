@@ -48,15 +48,15 @@ export function JobErrorCard({
     const showDriveRetry = job.canRetry && onRetryWithProfile && alternatives.length > 0
 
     return (
-        <Card className="border-orange/50 bg-orange/5">
+        <Card className="border-danger/40 bg-danger/5">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange">
+                <CardTitle className="flex items-center gap-2 text-danger-medium">
                     <AlertCircle className="h-5 w-5" />
-                    Error
+                    Transfer Failed
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                <p className="text-sm">{job.errorMessage}</p>
+                <p className="text-sm text-foreground/90">{job.errorMessage}</p>
                 <div className="flex flex-wrap gap-2">
                     {job.canRetry && onRetry && (
                         <Button
@@ -132,7 +132,7 @@ export function JobErrorCard({
                     )}
 
                     <Button variant="outline" size="sm" asChild>
-                        <Link href="/support">Contact Support</Link>
+                        <Link href="/storage">Manage Storage Profiles</Link>
                     </Button>
                 </div>
             </CardContent>

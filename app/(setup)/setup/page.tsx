@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Check, FileText, Loader2 } from 'lucide-react'
-import { GoogleDriveConfigForm } from '@/components/storage/GoogleDriveConfigForm'
-import { S3ConfigForm } from '@/components/storage/S3ConfigForm'
+import { CloudDownload, Check, Loader2 } from 'lucide-react'
+import { getSetupStatus } from '@/lib/api/setup'
 import { SetupAccountStep } from '@/components/setup/SetupAccountStep'
 import { SetupPreferencesStep } from '@/components/setup/SetupPreferencesStep'
-import { getSetupStatus } from '@/lib/api/setup'
+import { GoogleDriveConfigForm, S3ConfigForm } from '@/components/storage'
 
 type Step = 1 | 2 | 3
+type StorageProvider = 'gdrive' | 's3' | null
 
 const STEPS: { number: Step; label: string }[] = [
     { number: 1, label: 'Account' },
@@ -19,37 +19,26 @@ const STEPS: { number: Step; label: string }[] = [
     { number: 3, label: 'Preferences' },
 ]
 
-/**
- * First-run wizard: claim the instance, connect somewhere to upload to, pick a couple of
- * defaults.
- *
- * Only step 1 is required — it is the one that creates the account. Storage and
- * preferences are both reachable later from the app, so making them mandatory here would
- * only trap someone who does not yet have their Google Cloud credentials to hand.
- */
 export default function SetupPage() {
     const router = useRouter()
     const [step, setStep] = useState<Step>(1)
+    const [storageProvider, setStorageProvider] = useState<StorageProvider>(null)
     const [checking, setChecking] = useState(true)
-    const [storageProvider, setStorageProvider] = useState<'gdrive' | 's3' | null>(null)
 
-    // An instance that is already configured must not show this page: the API would refuse
-    // the claim anyway, and a wizard that cannot succeed is worse than no wizard.
     useEffect(() => {
         let active = true
 
         getSetupStatus()
-            .then((status) => {
+            .then(({ needsSetup }) => {
                 if (!active) return
-                if (!status.needsSetup) {
+
+                if (!needsSetup) {
                     router.replace('/dashboard')
-                    return
+                } else {
+                    setChecking(false)
                 }
-                setChecking(false)
             })
             .catch(() => {
-                // Backend unreachable. Show the wizard rather than a dead end — the first
-                // submit will report the real problem.
                 if (active) setChecking(false)
             })
 
@@ -72,15 +61,15 @@ export default function SetupPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-teal-primary/20 via-background to-teal-secondary/20 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/15 via-background to-primary/5 p-4">
             <div className="w-full max-w-2xl space-y-6">
                 <div className="flex flex-col items-center space-y-2">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-teal-primary to-teal-secondary">
-                        <FileText className="h-7 w-7 text-gray-900" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl gradient-primary shadow-[0_0_20px_rgba(18,135,117,0.25)]">
+                        <CloudDownload className="h-7 w-7 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold">Welcome to TorrenClou</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Welcome to TorrentDrive</h1>
                     <p className="text-center text-sm text-muted-foreground">
-                        A few things to set up, then you are done
+                        Claim your instance and connect cloud storage in three quick steps
                     </p>
                 </div>
 

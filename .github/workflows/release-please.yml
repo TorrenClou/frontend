@@ -7,7 +7,7 @@ name: Release Please
 # has never had a git tag, and package.json has sat at 0.1.0 since the first
 # commit — it is deliberately left there rather than bumped to match the product
 # version, because component versions are developer-facing provenance and the
-# number users pin is the combined image built in TorrenClou/deploy.
+# number users pin is the combined image built in TorrentDrive/deploy.
 on:
   push:
     branches: [main]

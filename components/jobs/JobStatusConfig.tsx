@@ -22,67 +22,67 @@ export const jobStatusConfig: Record<JobStatus, JobStatusConfigItem> = {
         icon: <Clock className="h-6 w-6" />,
         badgeVariant: 'pending',
         label: 'Queued',
-        color: 'text-warning',
+        color: 'text-warning-medium',
     },
     [JobStatus.DOWNLOADING]: {
         icon: <Download className="h-6 w-6" />,
         badgeVariant: 'processing',
         label: 'Downloading',
-        color: 'text-teal-primary',
+        color: 'text-primary',
     },
     [JobStatus.PENDING_UPLOAD]: {
         icon: <Clock className="h-6 w-6" />,
         badgeVariant: 'pending',
         label: 'Pending Upload',
-        color: 'text-warning',
+        color: 'text-warning-medium',
     },
     [JobStatus.UPLOADING]: {
         icon: <Upload className="h-6 w-6" />,
         badgeVariant: 'secondary',
         label: 'Uploading',
-        color: 'text-teal-secondary',
+        color: 'text-info-medium',
     },
     [JobStatus.TORRENT_DOWNLOAD_RETRY]: {
         icon: <RefreshCcw className="h-6 w-6" />,
         badgeVariant: 'processing',
         label: 'Retrying download',
-        color: 'text-warning',
+        color: 'text-warning-medium',
     },
     [JobStatus.UPLOAD_RETRY]: {
         icon: <RefreshCcw className="h-6 w-6" />,
         badgeVariant: 'processing',
         label: 'Retrying upload',
-        color: 'text-warning',
+        color: 'text-warning-medium',
     },
     [JobStatus.COMPLETED]: {
         icon: <CheckCircle className="h-6 w-6" />,
         badgeVariant: 'default',
         label: 'Completed',
-        color: 'text-teal-secondary',
+        color: 'text-success-medium',
     },
     [JobStatus.FAILED]: {
         icon: <XCircle className="h-6 w-6" />,
         badgeVariant: 'destructive',
         label: 'Failed',
-        color: 'text-orange',
+        color: 'text-danger-medium',
     },
     [JobStatus.TORRENT_FAILED]: {
         icon: <XCircle className="h-6 w-6" />,
         badgeVariant: 'destructive',
         label: 'Download failed',
-        color: 'text-orange',
+        color: 'text-danger-medium',
     },
     [JobStatus.UPLOAD_FAILED]: {
         icon: <XCircle className="h-6 w-6" />,
         badgeVariant: 'destructive',
         label: 'Upload failed',
-        color: 'text-orange',
+        color: 'text-danger-medium',
     },
     [JobStatus.GOOGLE_DRIVE_FAILED]: {
         icon: <AlertCircle className="h-6 w-6" />,
         badgeVariant: 'destructive',
         label: 'Google Drive upload failed',
-        color: 'text-orange',
+        color: 'text-danger-medium',
     },
     [JobStatus.CANCELLED]: {
         icon: <XCircle className="h-6 w-6" />,
@@ -92,12 +92,10 @@ export const jobStatusConfig: Record<JobStatus, JobStatusConfigItem> = {
     },
 }
 
-// Helper function to get status config with fallback
 export function getJobStatusConfig(status: JobStatus): JobStatusConfigItem {
     return jobStatusConfig[status] || jobStatusConfig[JobStatus.QUEUED]
 }
 
-// Active job statuses
 export const ACTIVE_JOB_STATUSES = [
     JobStatus.QUEUED,
     JobStatus.DOWNLOADING,
@@ -107,7 +105,6 @@ export const ACTIVE_JOB_STATUSES = [
     JobStatus.UPLOAD_RETRY,
 ]
 
-// Failed job statuses
 export const FAILED_JOB_STATUSES = [
     JobStatus.FAILED,
     JobStatus.TORRENT_FAILED,
@@ -115,15 +112,10 @@ export const FAILED_JOB_STATUSES = [
     JobStatus.GOOGLE_DRIVE_FAILED,
 ]
 
-// Helper to check if a job is active
 export function isJobActive(status: JobStatus): boolean {
     return ACTIVE_JOB_STATUSES.includes(status)
 }
 
-// Helper to check if a job has failed
 export function isJobFailed(status: JobStatus): boolean {
     return FAILED_JOB_STATUSES.includes(status)
 }
-
-
-

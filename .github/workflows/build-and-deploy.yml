@@ -46,7 +46,7 @@ jobs:
   # This repo published no image at all, so there was nothing to pull for any
   # deployment that runs the frontend as its own service — which is what
   # Railway, Render and every split topology require. Only the all-in-one image
-  # built in TorrenClou/deploy contained a frontend.
+  # built in TorrentDrive/deploy contained a frontend.
   # Each architecture builds on a runner of that architecture.
   #
   # This was one job emulating arm64 through QEMU, which took around 17 minutes
@@ -158,9 +158,9 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
           labels: |
-            org.opencontainers.image.title=TorrenClou web
-            org.opencontainers.image.description=TorrenClou web app — self-hosted torrent-to-cloud
-            org.opencontainers.image.vendor=TorrenClou
+            org.opencontainers.image.title=TorrentDrive web
+            org.opencontainers.image.description=TorrentDrive web app — self-hosted torrent-to-cloud
+            org.opencontainers.image.vendor=TorrentDrive
             org.opencontainers.image.licenses=MIT
             org.opencontainers.image.url=https://tc.gitnasr.com
             org.opencontainers.image.documentation=https://tc.gitnasr.com/docs
@@ -193,7 +193,7 @@ jobs:
   # the response was not exactly 200. It had been failing every push to main
   # with "Branch Not Match" (301), which made good builds look broken.
   #
-  # TorrenClou is not tied to one host. This repo publishes an image; Dokploy,
+  # TorrentDrive is not tied to one host. This repo publishes an image; Dokploy,
   # Coolify, Railway, Render and a plain docker host all pull it, and most
   # redeploy on their own.
   #
@@ -239,7 +239,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.DEPLOY_PAT }}
-          repository: TorrenClou/deploy
+          repository: TorrentDrive/deploy
           event-type: build-combined
           client-payload: |
             {
@@ -300,7 +300,7 @@ jobs:
         if: steps.release.outputs.is_release == 'true'
         run: |
           set -euo pipefail
-          # github.repository preserves the owner's casing ("TorrenClou/frontend"),
+          # github.repository preserves the owner's casing ("TorrentDrive/frontend"),
           # and Docker rejects an uppercase repository name. The build job above
           # never hit this because docker/metadata-action lowercases for you.
           image="ghcr.io/$(echo "${{ github.repository }}" | tr "[:upper:]" "[:lower:]")/web"

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -11,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { LogOut, User, ChevronDown, Menu } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, Menu } from 'lucide-react'
 
 interface TopbarProps {
   /** Opens the mobile navigation drawer. Absent on screens with a permanent sidebar. */
@@ -21,11 +22,12 @@ interface TopbarProps {
 export function Topbar({ onOpenMobileNav }: TopbarProps = {}) {
   const { data: session } = useSession()
 
-  const userInitials = session?.user?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase() || 'U'
+  const userInitials =
+    session?.user?.name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() || 'U'
 
   return (
     <div className="flex h-16 items-center justify-between gap-2 border-b border-border bg-card px-4 sm:px-6 lg:justify-end">
@@ -66,20 +68,22 @@ export function Topbar({ onOpenMobileNav }: TopbarProps = {}) {
           <DropdownMenuLabel>
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">
-                {session?.user?.name}
+                {session?.user?.name || 'Administrator'}
               </p>
-              <p className="text-xs leading-none text-muted-foreground">
+              <p className="text-xs leading-none text-muted-foreground truncate">
                 {session?.user?.email}
               </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/settings" className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Account &amp; Settings</span>
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => signOut()}>
+          <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
