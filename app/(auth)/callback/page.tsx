@@ -87,7 +87,7 @@ function CallbackLoading() {
 
 export default function CallbackPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/15 via-background to-primary/5 p-4">
+    <div className="flex h-[100dvh] overflow-y-auto items-center justify-center bg-gradient-to-br from-primary/15 via-background to-primary/5 p-4">
       <Suspense fallback={<CallbackLoading />}>
         <CallbackContent />
       </Suspense>

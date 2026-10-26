@@ -81,7 +81,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="h-screen overflow-y-auto flex flex-col lg:flex-row bg-background text-foreground antialiased">
+    <div className="h-[100dvh] overflow-y-auto flex flex-col lg:flex-row bg-background text-foreground antialiased">
 
       {/* LEFT SIDE — Branding */}
       <div className="relative w-full lg:w-1/2 flex flex-col justify-center p-8 lg:p-16 xl:p-24 overflow-hidden">

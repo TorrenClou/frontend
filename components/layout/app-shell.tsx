@@ -41,9 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }, [mobileNavOpen])
 
     return (
-        <div className="flex h-[100dvh] overflow-hidden">
+        <div className="fixed inset-0 flex h-[100dvh] w-full overflow-hidden bg-background">
             {/* Permanent rail, large screens only */}
-            <div className="hidden lg:flex">
+            <div className="hidden lg:flex shrink-0">
                 <Sidebar />
             </div>
 
@@ -79,11 +79,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                 <Topbar onOpenMobileNav={() => setMobileNavOpen(true)} />
                 {/* Tighter gutters on small screens — 1.5rem each side is a lot of a
                     375px viewport to spend on whitespace. */}
-                <main className="min-h-0 flex-1 overflow-auto bg-background p-4 sm:p-6">
+                <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain bg-background p-4 sm:p-6">
                     {children}
                 </main>
             </div>

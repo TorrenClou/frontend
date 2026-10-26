@@ -64,7 +64,8 @@
 
   html,
   body {
-    @apply min-h-screen;
+    @apply h-[100dvh] overflow-hidden;
+    overscroll-behavior: none;
   }
 
   body {

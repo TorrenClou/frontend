@@ -54,15 +54,15 @@ export default function SetupPage() {
 
     if (checking) {
         return (
-            <div className="flex min-h-screen items-center justify-center">
+            <div className="flex h-[100dvh] items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
         )
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/15 via-background to-primary/5 p-4">
-            <div className="w-full max-w-2xl space-y-6">
+        <div className="flex h-[100dvh] overflow-y-auto items-center justify-center bg-gradient-to-br from-primary/15 via-background to-primary/5 p-4">
+            <div className="my-auto w-full max-w-2xl space-y-6 py-6">
                 <div className="flex flex-col items-center space-y-2">
                     <div className="flex h-14 w-14 items-center justify-center rounded-xl gradient-primary shadow-[0_0_20px_rgba(18,135,117,0.25)]">
                         <CloudDownload className="h-7 w-7 text-white" />
