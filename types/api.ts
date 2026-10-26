@@ -1,13 +1,7 @@
 // API Response Types - Complete DTOs matching backend
-import {
-  JobStatus,
-  JobType,
-} from './enums'
-
-// Re-export canonical Zod-inferred types so existing imports from '@/types/api'
-// continue to resolve while the authoritative definition lives in the domain module.
 export type { TorrentAnalysisResponse } from './torrents'
 export type { StorageProfile, OAuthCredential, GoogleDriveAuthResponse } from './storage'
+export type { Job, UserJob } from './jobs'
 
 // ============================================
 // User Models
@@ -71,29 +65,6 @@ export interface TorrentJob {
   status: 'Downloading' | 'Uploading' | 'Completed' | 'Failed'
   progress: number
   createdAt: string
-}
-
-export interface UserJob {
-  id: number
-  storageProfileId: number
-  status: JobStatus
-  type: JobType
-  requestFileId: number
-  errorMessage?: string
-  currentState?: string
-  startedAt?: string
-  completedAt?: string
-  bytesDownloaded: number
-  totalBytes: number
-  selectedFilePaths: string[] | null
-  progress: number
-  // Display fields
-  fileName?: string
-  storageProfileName?: string
-  createdAt?: string
-  // Action state properties
-  canRetry?: boolean
-  canCancel?: boolean
 }
 
 export interface JobCreationResult {

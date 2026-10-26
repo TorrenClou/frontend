@@ -13,10 +13,18 @@ import {
     cancelJob,
     changeJobStorageProfile,
     forceStartJob,
+    retryFailedJobs,
+    cancelJobs,
 } from '@/lib/api/jobs'
 import { useJobsStore } from '@/stores/jobsStore'
-import type { JobsQueryParams, JobTimelineQueryParams } from '@/types/jobs'
-import { paginatedJobsSchema, jobSchema, jobStatisticsSchema, paginatedJobTimelineSchema, getJobsErrorMessage } from '@/types/jobs'
+import type { JobQueryParameters, JobTimelineQueryParams } from '@/types/jobs'
+import {
+    paginatedJobsSchema,
+    jobSchema,
+    jobStatisticsSchema,
+    paginatedJobTimelineSchema,
+    getJobsErrorMessage,
+} from '@/types/jobs'
 import { extractApiError } from '@/lib/api/errors'
 
 // ============================================
@@ -26,7 +34,7 @@ import { extractApiError } from '@/lib/api/errors'
 export const jobsKeys = {
     all: ['jobs'] as const,
     lists: () => [...jobsKeys.all, 'list'] as const,
-    list: (params: JobsQueryParams) => [...jobsKeys.lists(), params] as const,
+    list: (params: JobQueryParameters) => [...jobsKeys.lists(), params] as const,
     details: () => [...jobsKeys.all, 'detail'] as const,
     detail: (id: number) => [...jobsKeys.details(), id] as const,
     statistics: () => [...jobsKeys.all, 'statistics'] as const,
@@ -40,53 +48,49 @@ export const jobsKeys = {
 // ============================================
 
 /**
- * Hook to fetch paginated jobs list
- * Enhanced with refetch on focus, reconnect, and polling for active jobs
- *
- * @param params - Optional overrides for pageSize and status; when provided they
- *   take precedence over the Zustand store values so callers like DashboardPage
- *   can fetch with their own params without mutating shared store state.
+ * Hook to fetch paginated jobs list with rich search, facets, and sorting.
+ * Enhanced with refetch on focus, reconnect, and polling for active jobs.
  */
-export function useJobs(params?: Pick<JobsQueryParams, 'pageSize' | 'status'>) {
+export function useJobs(params?: JobQueryParameters) {
     const { status } = useSession()
     const { currentPage, pageSize: storePageSize, selectedStatus } = useJobsStore()
 
-    // Explicit overrides win over store values; use 'in' check so null is honoured.
+    const pageNumber = params?.pageNumber ?? currentPage
     const pageSize = params?.pageSize ?? storePageSize
     const effectiveStatus =
         params !== undefined && 'status' in params ? (params.status ?? null) : selectedStatus
 
+    const queryParams: JobQueryParameters = {
+        ...params,
+        pageNumber,
+        pageSize,
+        status: effectiveStatus,
+    }
+
     return useQuery({
-        queryKey: jobsKeys.list({ pageNumber: currentPage, pageSize, status: effectiveStatus }),
+        queryKey: jobsKeys.list(queryParams),
         queryFn: async () => {
-            const data = await getJobs({
-                pageNumber: currentPage,
-                pageSize,
-                status: effectiveStatus,
-            })
-            // Validate with Zod
+            const data = await getJobs(queryParams)
             return paginatedJobsSchema.parse(data)
         },
         enabled: status === 'authenticated',
-        staleTime: 5 * 1000, // 5 seconds - jobs update frequently
+        staleTime: 5 * 1000,
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         refetchOnReconnect: true,
-        // Poll every 10 seconds if there are active jobs
         refetchInterval: (query) => {
             const data = query.state.data
             if (!data) return false
-            const hasActiveJobs = data.items.some(job => 
+            const hasActiveJobs = data.items.some((job) =>
                 ['QUEUED', 'DOWNLOADING', 'PENDING_UPLOAD', 'UPLOADING', 'TORRENT_DOWNLOAD_RETRY', 'UPLOAD_RETRY'].includes(job.status)
             )
-            return hasActiveJobs ? 10 * 1000 : false
+            return hasActiveJobs ? 5 * 1000 : false
         },
     })
 }
 
 /**
  * Hook to fetch a specific job by ID
- * Enhanced with refetch on focus, reconnect, and polling for active jobs
  */
 export function useJob(jobId: number | null) {
     const { status } = useSession()
@@ -98,15 +102,13 @@ export function useJob(jobId: number | null) {
                 throw new Error('Invalid job ID')
             }
             const data = await getJob(jobId)
-            // Validate with Zod
             return jobSchema.parse(data)
         },
         enabled: status === 'authenticated' && !!jobId,
-        staleTime: 2 * 1000, // 2 seconds - job details update frequently
+        staleTime: 2 * 1000,
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         refetchOnReconnect: true,
-        // Poll every 5 seconds if job is active
         refetchInterval: (query) => {
             const data = query.state.data
             if (!data) return false
@@ -118,7 +120,6 @@ export function useJob(jobId: number | null) {
 
 /**
  * Hook to fetch job statistics
- * Enhanced with refetch on focus
  */
 export function useJobStatistics() {
     const { status } = useSession()
@@ -127,25 +128,26 @@ export function useJobStatistics() {
         queryKey: jobsKeys.statistics(),
         queryFn: async () => {
             const data = await getJobStatistics()
-            // Validate with Zod
             return jobStatisticsSchema.parse(data)
         },
         enabled: status === 'authenticated',
-        staleTime: 10 * 1000, // 10 seconds
+        staleTime: 5 * 1000,
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         refetchOnReconnect: true,
+        refetchInterval: (query) => {
+            const data = query.state.data
+            if (!data) return false
+            return (data.activeJobs ?? 0) > 0 ? 5 * 1000 : false
+        },
     })
 }
 
 /**
  * Hook to fetch job timeline with pagination
- * Enhanced with refetch on focus, reconnect, and polling for active jobs
  */
 export function useJobTimeline(jobId: number | null, pageNumber: number = 1, pageSize: number = 10) {
     const { status } = useSession()
-    
-    // Get job data to check if it's active
     const { data: jobData } = useJob(jobId)
 
     return useQuery({
@@ -155,15 +157,13 @@ export function useJobTimeline(jobId: number | null, pageNumber: number = 1, pag
                 throw new Error('Invalid job ID')
             }
             const data = await getJobTimeline(jobId, { pageNumber, pageSize })
-            // Validate with Zod
             return paginatedJobTimelineSchema.parse(data)
         },
         enabled: status === 'authenticated' && !!jobId,
-        staleTime: 5 * 1000, // 5 seconds - timeline updates when job status changes
+        staleTime: 5 * 1000,
         refetchOnWindowFocus: true,
         refetchOnMount: true,
         refetchOnReconnect: true,
-        // Poll every 10 seconds only if job is active
         refetchInterval: () => {
             if (!jobData) return false
             const isActive = ['QUEUED', 'DOWNLOADING', 'PENDING_UPLOAD', 'UPLOADING', 'TORRENT_DOWNLOAD_RETRY', 'UPLOAD_RETRY'].includes(jobData.status)
@@ -179,19 +179,17 @@ export function usePrefetchNextPage() {
     const queryClient = useQueryClient()
     const { currentPage, pageSize, selectedStatus } = useJobsStore()
 
-    return (hasNextPage: boolean) => {
+    return (hasNextPage: boolean, extraParams?: JobQueryParameters) => {
         if (hasNextPage) {
+            const nextParams: JobQueryParameters = {
+                ...extraParams,
+                pageNumber: (extraParams?.pageNumber ?? currentPage) + 1,
+                pageSize: extraParams?.pageSize ?? pageSize,
+                status: extraParams && 'status' in extraParams ? extraParams.status : selectedStatus,
+            }
             queryClient.prefetchQuery({
-                queryKey: jobsKeys.list({
-                    pageNumber: currentPage + 1,
-                    pageSize,
-                    status: selectedStatus
-                }),
-                queryFn: () => getJobs({
-                    pageNumber: currentPage + 1,
-                    pageSize,
-                    status: selectedStatus,
-                }),
+                queryKey: jobsKeys.list(nextParams),
+                queryFn: () => getJobs(nextParams),
             })
         }
     }
@@ -211,8 +209,6 @@ function handleJobActionError(error: unknown): string {
 
 /**
  * Worker capacity and queue depth.
- *
- * Polled while a job is waiting, because the useful moment is when a slot frees up.
  */
 export function useJobQueueStatus(enabled = true) {
     const { status } = useSession()
@@ -246,12 +242,11 @@ export function useRetryJob() {
         mutationFn: ({ jobId, storageProfileId }: RetryJobVariables) =>
             retryJob(jobId, storageProfileId),
         onSuccess: (_result, variables) => {
-            // Invalidate job queries to refresh data
             queryClient.invalidateQueries({ queryKey: jobsKeys.all })
             toast.success(
                 variables.storageProfileId
                     ? 'Job retry initiated on the selected drive'
-                    : 'Job retry initiated successfully'
+                    : 'Job retry initiated'
             )
         },
         onError: (error) => {
@@ -320,13 +315,79 @@ export function useCancelJob() {
     return useMutation({
         mutationFn: cancelJob,
         onSuccess: () => {
-            // Invalidate job queries to refresh data
             queryClient.invalidateQueries({ queryKey: jobsKeys.all })
-            toast.success('Job cancelled successfully')
+            toast.success('Job cancelled')
         },
         onError: (error) => {
             const message = handleJobActionError(error)
             toast.error('Failed to cancel job', { description: message })
+        },
+    })
+}
+
+/**
+ * Hook for batch-retrying failed jobs (selected IDs or all failed jobs)
+ */
+export function useRetryFailedJobs() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (request?: { jobIds?: number[]; targetStorageProfileId?: number }) =>
+            retryFailedJobs(request),
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: jobsKeys.all })
+            if (result.succeededCount > 0 && result.failedCount === 0) {
+                toast.success(
+                    `Retrying ${result.succeededCount} job${result.succeededCount === 1 ? '' : 's'}`
+                )
+            } else if (result.succeededCount > 0 && result.failedCount > 0) {
+                toast.warning(
+                    `Retried ${result.succeededCount} of ${result.totalRequested} jobs (${result.failedCount} could not be retried)`
+                )
+            } else if (result.totalRequested === 0) {
+                toast.info('No failed jobs needed retrying')
+            } else {
+                const firstErr = result.errors[0]?.message
+                toast.error('Could not retry selected jobs', {
+                    description: firstErr || 'Verify that your storage destination is active.',
+                })
+            }
+        },
+        onError: (error) => {
+            const message = handleJobActionError(error)
+            toast.error('Batch retry failed', { description: message })
+        },
+    })
+}
+
+/**
+ * Hook for batch-cancelling active jobs
+ */
+export function useBatchCancelJobs() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (request: { jobIds: number[] }) => cancelJobs(request),
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: jobsKeys.all })
+            if (result.succeededCount > 0 && result.failedCount === 0) {
+                toast.success(
+                    `Cancelled ${result.succeededCount} job${result.succeededCount === 1 ? '' : 's'}`
+                )
+            } else if (result.succeededCount > 0 && result.failedCount > 0) {
+                toast.warning(
+                    `Cancelled ${result.succeededCount} of ${result.totalRequested} jobs (${result.failedCount} could not be cancelled)`
+                )
+            } else {
+                const firstErr = result.errors[0]?.message
+                toast.error('Could not cancel selected jobs', {
+                    description: firstErr || 'Jobs may have already completed or been cancelled.',
+                })
+            }
+        },
+        onError: (error) => {
+            const message = handleJobActionError(error)
+            toast.error('Batch cancel failed', { description: message })
         },
     })
 }

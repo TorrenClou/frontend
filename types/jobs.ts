@@ -1,7 +1,6 @@
 // Jobs Types with Zod Validation
 import { z } from 'zod'
 import { JobStatus, JobType, StorageRouteReason } from './enums'
-import type { UserJob } from './api'
 
 // ============================================
 // Zod Schemas
@@ -41,55 +40,89 @@ const validStatusStrings = [
 // Schema that accepts both numeric enum values and string values
 export const jobStatusSchema = z.preprocess(
     (val) => {
-        // If it's a number, convert to string using the map
         if (typeof val === 'number') {
             return jobStatusNumberMap[val] ?? val
         }
-        // If it's a string that represents a number, convert it
         if (typeof val === 'string' && /^\d+$/.test(val)) {
             const numVal = parseInt(val, 10)
             return jobStatusNumberMap[numVal] ?? val
         }
-        // If it's already a string, return as-is
         return val
     },
     z.enum(validStatusStrings)
 )
 
-export const jobTypeSchema = z.enum(['Torrent'])
+const routeReasonNumberMap: Record<number, StorageRouteReason> = {
+    0: StorageRouteReason.None,
+    1: StorageRouteReason.UserRouted,
+    2: StorageRouteReason.FailoverNeedsReauth,
+    3: StorageRouteReason.FailoverQuotaExceeded,
+    4: StorageRouteReason.FailoverUnhealthy,
+    5: StorageRouteReason.FailoverInactive,
+}
+
+export const storageRouteReasonSchema = z.preprocess(
+    (val) => {
+        if (val === null || val === undefined) return StorageRouteReason.None
+        if (typeof val === 'number') {
+            return routeReasonNumberMap[val] ?? StorageRouteReason.None
+        }
+        if (typeof val === 'string' && /^\d+$/.test(val)) {
+            const numVal = parseInt(val, 10)
+            return routeReasonNumberMap[numVal] ?? StorageRouteReason.None
+        }
+        return val
+    },
+    z.nativeEnum(StorageRouteReason).catch(StorageRouteReason.None)
+)
+
+export const jobTypeSchema = z.preprocess(
+    (val) => (val === 0 || val === '0' || !val ? 'Torrent' : val),
+    z.enum(['Torrent']).catch('Torrent')
+)
+
+export type MediaCategory = 'video' | 'audio' | 'archive' | 'document' | 'software' | 'other' | string
 
 export const jobSchema = z.object({
     id: z.number().int().positive(),
     storageProfileId: z.number().int().positive(),
-    storageProfileName: z.string().nullable(),
+    storageProfileName: z.string().nullable().optional().default(null),
+    storageProviderType: z.string().nullable().optional().default(null),
     // Set once a job has been moved off the profile it was created with.
     originalStorageProfileId: z.number().int().positive().nullable().optional().default(null),
     originalStorageProfileName: z.string().nullable().optional().default(null),
     allowStorageFailover: z.boolean().optional().default(true),
     failoverAttempts: z.number().int().nonnegative().optional().default(0),
-    lastRouteReason: z.nativeEnum(StorageRouteReason).optional().default(StorageRouteReason.None),
+    lastRouteReason: storageRouteReasonSchema.optional().default(StorageRouteReason.None),
     wasRerouted: z.boolean().optional().default(false),
     status: jobStatusSchema,
     type: jobTypeSchema,
     requestFileId: z.number().int().positive(),
-    requestFileName: z.string().nullable(),
-    errorMessage: z.string().nullable(),
-    currentState: z.string().nullable(),
-    bytesDownloaded: z.number().int().nonnegative(),
-    bytesUploaded: z.number().int().nonnegative().default(0),
-    totalBytes: z.number().int().nonnegative(),
+    requestFileName: z.string().nullable().optional().default(null),
+    infoHash: z.string().nullable().optional().default(null),
+    errorMessage: z.string().nullable().optional().default(null),
+    currentState: z.string().nullable().optional().default(null),
+    lastHeartbeat: z.string().nullable().optional().default(null),
+    bytesDownloaded: z.number().nonnegative().default(0),
+    bytesUploaded: z.number().nonnegative().optional().default(0),
+    totalBytes: z.number().nonnegative().default(0),
     // Live transfer rates written by the workers. Meaningful only during the matching
     // phase — a finished job reports 0.
     downloadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
     uploadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
-    selectedFilePaths: z.array(z.string()).nullable(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime().nullable().optional(),
-    startedAt: z.string().datetime().nullable().optional(),
-    completedAt: z.string().datetime().nullable().optional(),
-    progressPercentage: z.number().transform((val) => Math.min(100, Math.max(0, val))),
-    uploadProgressPercentage: z.number().transform((val) => Math.min(100, Math.max(0, val))).default(0),
-    isActive: z.boolean(),
+    selectedFilePaths: z.array(z.string()).nullable().optional().default(null),
+    totalFilesCount: z.number().int().nonnegative().optional(),
+    selectedFilesCount: z.number().int().nonnegative().optional(),
+    mediaCategory: z.string().nullable().optional(),
+    isStalled: z.boolean().optional().default(false),
+    isSelective: z.boolean().optional().default(false),
+    createdAt: z.string(),
+    updatedAt: z.string().nullable().optional(),
+    startedAt: z.string().nullable().optional(),
+    completedAt: z.string().nullable().optional(),
+    progressPercentage: z.number().default(0).transform((val) => Math.min(100, Math.max(0, Number.isFinite(val) ? val : 0))),
+    uploadProgressPercentage: z.number().optional().default(0).transform((val) => Math.min(100, Math.max(0, Number.isFinite(val) ? val : 0))),
+    isActive: z.boolean().default(false),
     // Action state properties
     canRetry: z.boolean().optional().default(false),
     canCancel: z.boolean().optional().default(false),
@@ -123,23 +156,40 @@ export const jobQueueStatusSchema = z.object({
     downloadSlotsFull: z.boolean(),
 })
 
+export const profileJobCountSchema = z.object({
+    storageProfileId: z.number().int(),
+    profileName: z.string(),
+    providerType: z.string(),
+    count: z.number().int().nonnegative(),
+})
+
 export const jobStatisticsSchema = z.object({
-    totalJobs: z.number().int().nonnegative(),
-    activeJobs: z.number().int().nonnegative(),
-    completedJobs: z.number().int().nonnegative(),
-    failedJobs: z.number().int().nonnegative(),
-    downloadingJobs: z.number().int().nonnegative().optional(),
+    totalJobs: z.number().int().nonnegative().default(0),
+    activeJobs: z.number().int().nonnegative().default(0),
+    completedJobs: z.number().int().nonnegative().default(0),
+    failedJobs: z.number().int().nonnegative().default(0),
+    queuedJobs: z.number().int().nonnegative().optional().default(0),
+    downloadingJobs: z.number().int().nonnegative().optional().default(0),
+    pendingUploadJobs: z.number().int().nonnegative().optional().default(0),
+    uploadingJobs: z.number().int().nonnegative().optional().default(0),
+    retryingJobs: z.number().int().nonnegative().optional().default(0),
+    cancelledJobs: z.number().int().nonnegative().optional().default(0),
+    pinnedJobs: z.number().int().nonnegative().optional().default(0),
+    reroutedJobs: z.number().int().nonnegative().optional().default(0),
+    stalledJobs: z.number().int().nonnegative().optional().default(0),
+    selectiveJobs: z.number().int().nonnegative().optional().default(0),
+    totalBytesTransferred: z.number().nonnegative().optional().default(0),
+    totalDownloadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
+    totalUploadSpeedBytesPerSecond: z.number().nonnegative().optional().default(0),
+    providerCounts: z.record(z.string(), z.number()).optional().default({}),
+    categoryCounts: z.record(z.string(), z.number()).optional().default({}),
+    sizeBucketCounts: z.record(z.string(), z.number()).optional().default({}),
+    profileCounts: z.array(profileJobCountSchema).optional().default([]),
     // Available filters for the current user, as returned by the backend
     statusFilters: z.array(z.object({
         status: jobStatusSchema,
         count: z.number().int().nonnegative(),
-    })),
-})
-
-export const jobsQueryParamsSchema = z.object({
-    pageNumber: z.number().int().positive().optional(),
-    pageSize: z.number().int().positive().min(1).max(50).optional(),
-    status: jobStatusSchema.nullable().optional(),
+    })).optional().default([]),
 })
 
 // ============================================
@@ -153,7 +203,6 @@ export enum StatusChangeSource {
     Recovery = 'Recovery',
 }
 
-// Map of numeric enum values to string values (if backend sends numeric)
 const statusChangeSourceNumberMap: Record<number, string> = {
     0: 'Worker',
     1: 'User',
@@ -161,19 +210,15 @@ const statusChangeSourceNumberMap: Record<number, string> = {
     3: 'Recovery',
 }
 
-// Schema for status change source with preprocessing to handle both string and numeric values
 export const statusChangeSourceSchema = z.preprocess(
     (val) => {
-        // If it's a number, convert to string using the map
         if (typeof val === 'number') {
             return statusChangeSourceNumberMap[val] ?? val
         }
-        // If it's a string that represents a number, convert it
         if (typeof val === 'string' && /^\d+$/.test(val)) {
             const numVal = parseInt(val, 10)
             return statusChangeSourceNumberMap[numVal] ?? val
         }
-        // If it's already a string, return as-is (case-insensitive matching)
         if (typeof val === 'string') {
             const upperVal = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase()
             if (['Worker', 'User', 'System', 'Recovery'].includes(upperVal)) {
@@ -193,8 +238,8 @@ export const jobTimelineEntrySchema = z.object({
     sourceName: z.string(),
     errorMessage: z.string().nullable(),
     metadataJson: z.string().nullable(),
-    changedAt: z.string().datetime(),
-    durationFromPrevious: z.string().nullable(), // ISO 8601 duration format
+    changedAt: z.string(),
+    durationFromPrevious: z.string().nullable(),
 })
 
 export const paginatedJobTimelineSchema = z.object({
@@ -211,23 +256,94 @@ export const paginatedJobTimelineSchema = z.object({
 // Inferred Types from Schemas
 // ============================================
 
-export type Job = z.infer<typeof jobSchema>
-export type PaginatedJobs = z.infer<typeof paginatedJobsSchema>
+export type BaseJob = z.infer<typeof jobSchema>
+
+/**
+ * Unified Job DTO across the frontend.
+ * Includes legacy optional display fields (`fileName`, `progress`) so any caller
+ * constructed against the older `UserJob` shape remains 100% compatible without
+ * lossy `toUserJob` conversions.
+ */
+export interface Job extends BaseJob {
+    fileName?: string | null
+    progress?: number
+    timeline?: JobTimelineEntry[] | null
+}
+
+export type UserJob = Job
+
+export type PaginatedJobs = Omit<z.infer<typeof paginatedJobsSchema>, 'items'> & {
+    items: Job[]
+}
 export type JobStatistics = z.infer<typeof jobStatisticsSchema>
 export type JobQueueStatus = z.infer<typeof jobQueueStatusSchema>
 export type JobTimelineEntry = z.infer<typeof jobTimelineEntrySchema>
 export type PaginatedJobTimeline = z.infer<typeof paginatedJobTimelineSchema>
 
-// Manual type for query params (avoiding Zod default inference issues)
-export interface JobsQueryParams {
+export type JobPhaseFilter =
+    | 'all'
+    | 'active'
+    | 'downloading'
+    | 'uploading'
+    | 'queued'
+    | 'retrying'
+    | 'completed'
+    | 'failed'
+    | 'cancelled'
+    | string
+
+export type JobSortField =
+    | 'createdAt'
+    | 'size'
+    | 'progress'
+    | 'speed'
+    | 'name'
+    | 'completedAt'
+    | 'updatedAt'
+    | string
+
+export type SortDirection = 'asc' | 'desc'
+
+export interface JobQueryParameters {
     pageNumber?: number
     pageSize?: number
-    status?: 'QUEUED' | 'DOWNLOADING' | 'PENDING_UPLOAD' | 'UPLOADING' | 'TORRENT_DOWNLOAD_RETRY' | 'UPLOAD_RETRY' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'TORRENT_FAILED' | 'UPLOAD_FAILED' | 'GOOGLE_DRIVE_FAILED' | null
+    status?: JobStatus | string | null
+    statuses?: string | null
+    phase?: JobPhaseFilter | null
+    search?: string | null
+    provider?: 'GoogleDrive' | 'S3' | string | null
+    storageProfileId?: number | null
+    category?: MediaCategory | null
+    sizeBucket?: 'small' | 'medium' | 'large' | 'xl' | string | null
+    dateRange?: 'today' | '7d' | '30d' | '90d' | string | null
+    isPinned?: boolean | null
+    wasRerouted?: boolean | null
+    isStalled?: boolean | null
+    isSelective?: boolean | null
+    hasError?: boolean | null
+    sortBy?: JobSortField | null
+    sortDir?: SortDirection | null
 }
+
+export type JobsQueryParams = JobQueryParameters
 
 export interface JobTimelineQueryParams {
     pageNumber?: number
     pageSize?: number
+}
+
+export interface BatchJobActionError {
+    jobId?: number
+    code?: string
+    message: string
+}
+
+export interface BatchJobActionResult {
+    totalRequested: number
+    succeededCount: number
+    failedCount: number
+    succeededJobIds: number[]
+    errors: BatchJobActionError[]
 }
 
 // ============================================
@@ -235,33 +351,33 @@ export interface JobTimelineQueryParams {
 // ============================================
 
 export interface JobCardProps {
-    job: UserJob
+    job: Job
     className?: string
+    selectable?: boolean
+    selected?: boolean
+    onSelectChange?: (checked: boolean) => void
+    onRetry?: (jobId: number) => void
+    onForceStart?: (jobId: number) => void
+    onCancel?: (jobId: number) => void
+    isRetrying?: boolean
+    isForceStarting?: boolean
+    isCancelling?: boolean
 }
 
 export interface JobListProps {
-    jobs: UserJob[]
+    jobs: Job[]
     title?: string
     limit?: number
     showViewAll?: boolean
     emptyMessage?: string
     className?: string
+    onRetry?: (jobId: number) => void
+    onForceStart?: (jobId: number) => void
+    onCancel?: (jobId: number) => void
 }
 
 export interface JobDetailProps {
     job: Job
-    className?: string
-}
-
-export interface JobsFiltersProps {
-    className?: string
-}
-
-export interface JobsListProps {
-    className?: string
-}
-
-export interface JobsPaginationProps {
     className?: string
 }
 
