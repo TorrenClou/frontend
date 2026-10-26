@@ -45,6 +45,15 @@ async function proxy(
 
   const headers = new Headers(request.headers)
   for (const header of HOP_BY_HOP) headers.delete(header)
+
+  // Forward client-facing host and protocol so downstream services (e.g. OAuth callback
+  // redirect generators) can resolve the public origin without static configuration.
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host')
+  if (host) headers.set('x-forwarded-host', host)
+
+  const proto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '')
+  if (proto) headers.set('x-forwarded-proto', proto)
+
   // Host must describe the target, not the proxy, or the backend builds
   // absolute URLs pointing at itself through us.
   headers.delete('host')

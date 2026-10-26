@@ -191,7 +191,7 @@ export async function disconnectStorageProfile(id: number): Promise<void> {
 
 /**
  * Opens Google OAuth authorization URL in a popup window.
- * Polls for the redirect back to /storage with success/error params.
+ * Listens for postMessage from /storage/callback and polls for the redirect as fallback.
  * Reusable for both authenticate and reauthenticate flows.
  *
  * @param authorizationUrl - The Google OAuth consent URL
@@ -216,45 +216,107 @@ export function openGoogleDriveAuthPopup(authorizationUrl: string): Promise<numb
             return
         }
 
-        // Poll for popup to close (user cancelled)
-        const pollTimer = setInterval(() => {
+        let isCompleted = false
+        let pollTimer: ReturnType<typeof setInterval> | null = null
+        let checkCallback: ReturnType<typeof setInterval> | null = null
+        let timeoutTimer: ReturnType<typeof setTimeout> | null = null
+
+        const cleanup = () => {
+            if (pollTimer) clearInterval(pollTimer)
+            if (checkCallback) clearInterval(checkCallback)
+            if (timeoutTimer) clearTimeout(timeoutTimer)
+            window.removeEventListener('message', handleMessage)
+        }
+
+        const handleSuccess = (profileId: number) => {
+            if (isCompleted) return
+            isCompleted = true
+            cleanup()
+            try {
+                if (!popup.closed) {
+                    popup.close()
+                }
+            } catch {
+                // Ignore popup close error
+            }
+            resolve(profileId)
+        }
+
+        const handleError = (error: Error) => {
+            if (isCompleted) return
+            isCompleted = true
+            cleanup()
+            try {
+                if (!popup.closed) {
+                    popup.close()
+                }
+            } catch {
+                // Ignore popup close error
+            }
+            reject(error)
+        }
+
+        // 1. Listen for postMessage from /storage/callback
+        const handleMessage = (event: MessageEvent) => {
+            if (event.origin !== window.location.origin) return
+            const data = event.data
+            if (!data || typeof data !== 'object') return
+
+            if (data.type === 'TORRENTDRIVE_OAUTH_SUCCESS') {
+                const id = parseInt(data.profileId, 10)
+                if (Number.isInteger(id) && id > 0) {
+                    handleSuccess(id)
+                } else {
+                    handleError(new Error(`Invalid profile ID returned from OAuth message: "${data.profileId}"`))
+                }
+            } else if (data.type === 'TORRENTDRIVE_OAUTH_ERROR') {
+                handleError(new Error(data.error || 'Authentication failed'))
+            }
+        }
+
+        window.addEventListener('message', handleMessage)
+
+        // 2. Poll for popup closure (user closed it manually)
+        pollTimer = setInterval(() => {
             if (popup.closed) {
-                clearInterval(pollTimer)
-                clearInterval(checkCallback)
-                reject(new Error('AUTHORIZATION_CANCELLED'))
+                if (!isCompleted) {
+                    handleError(new Error('AUTHORIZATION_CANCELLED'))
+                }
             }
         }, 1000)
 
-        // Poll for redirect to /storage page
-        const checkCallback = setInterval(() => {
+        // 3. Fallback: Poll for redirect to /storage/callback or /storage page
+        checkCallback = setInterval(() => {
             try {
                 const popupUrl = popup.location.href
 
-                if (popupUrl.includes('/storage') && !popupUrl.includes('google') && !popupUrl.includes('accounts.google.com')) {
-                    clearInterval(checkCallback)
-                    clearInterval(pollTimer)
+                // Ignore if still on external Google domains or navigating through backend proxy
+                if (
+                    popupUrl &&
+                    !popupUrl.includes('google') &&
+                    !popupUrl.includes('accounts.google.com') &&
+                    !popupUrl.includes('/proxy/')
+                ) {
+                    if (popupUrl.includes('/storage/callback') || popupUrl.includes('/storage')) {
+                        const url = new URL(popupUrl)
+                        const success = url.searchParams.get('success')
+                        const profileId = url.searchParams.get('profileId')
+                        const error = url.searchParams.get('error')
+                        const message = url.searchParams.get('message')
 
-                    const url = new URL(popupUrl)
-                    const success = url.searchParams.get('success')
-                    const profileId = url.searchParams.get('profileId')
-                    const error = url.searchParams.get('error')
-                    const message = url.searchParams.get('message')
-
-                    popup.close()
-
-                    if (success === 'true' && profileId) {
-                        const id = parseInt(profileId, 10)
-                        if (Number.isInteger(id) && id > 0) {
-                            resolve(id)
-                        } else {
-                            reject(new Error(`Invalid profile ID returned from OAuth callback: "${profileId}"`))
+                        if (success === 'true' && profileId) {
+                            const id = parseInt(profileId, 10)
+                            if (Number.isInteger(id) && id > 0) {
+                                handleSuccess(id)
+                            } else {
+                                handleError(new Error(`Invalid profile ID returned from OAuth callback: "${profileId}"`))
+                            }
+                        } else if (error) {
+                            handleError(new Error(error))
+                        } else if (message) {
+                            handleError(new Error(message))
                         }
-                    } else if (error) {
-                        reject(new Error(error))
-                    } else if (message) {
-                        reject(new Error(message))
-                    } else {
-                        reject(new Error('Unknown error during OAuth'))
+                        // If no params match yet, do not reject! Keep waiting until params arrive or postMessage fires.
                     }
                 }
             } catch {
@@ -262,14 +324,9 @@ export function openGoogleDriveAuthPopup(authorizationUrl: string): Promise<numb
             }
         }, 500)
 
-        // Timeout after 5 minutes
-        setTimeout(() => {
-            if (!popup.closed) {
-                popup.close()
-            }
-            clearInterval(checkCallback)
-            clearInterval(pollTimer)
-            reject(new Error('AUTHORIZATION_TIMEOUT'))
+        // 4. Timeout after 5 minutes
+        timeoutTimer = setTimeout(() => {
+            handleError(new Error('AUTHORIZATION_TIMEOUT'))
         }, 5 * 60 * 1000)
     })
 }

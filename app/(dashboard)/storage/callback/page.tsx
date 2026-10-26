@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, XCircle, Loader2, ArrowRight } from 'lucide-react'
@@ -12,14 +12,12 @@ type CallbackStatus = 'processing' | 'success' | 'error'
 
 function CallbackContent() {
     const searchParams = useSearchParams()
-    const router = useRouter()
     const [status, setStatus] = useState<CallbackStatus>('processing')
     const [profileId, setProfileId] = useState<number | null>(null)
     const [errorMessage, setErrorMessage] = useState<string>('')
 
     useEffect(() => {
-        // Backend redirects to /storage?success=true&profileId=123 or /storage?error=...
-        // If popup lands here, redirect to /storage with the params
+        // Backend redirects to /storage/callback?success=true&profileId=123 or /storage/callback?error=...
         const success = searchParams.get('success')
         const error = searchParams.get('error')
         const profileIdParam = searchParams.get('profileId')
@@ -43,14 +41,36 @@ function CallbackContent() {
         setErrorMessage('Invalid callback. Missing required parameters.')
     }, [searchParams])
 
-    // Auto-close popup after success (if in popup)
+    // Signal parent window and auto-close popup after success (if in popup)
     useEffect(() => {
-        if (status === 'success' && window.opener) {
-            // This is a popup - will be handled by the parent window
-            // The parent is polling and will detect the redirect
-            return
+        if (status === 'success' && profileId && window.opener) {
+            try {
+                window.opener.postMessage(
+                    { type: 'TORRENTDRIVE_OAUTH_SUCCESS', profileId },
+                    window.location.origin
+                )
+            } catch {
+                // Ignore cross-origin error if any
+            }
+            const timer = setTimeout(() => {
+                try {
+                    window.close()
+                } catch {
+                    // Ignore
+                }
+            }, 1000)
+            return () => clearTimeout(timer)
+        } else if (status === 'error' && errorMessage && window.opener) {
+            try {
+                window.opener.postMessage(
+                    { type: 'TORRENTDRIVE_OAUTH_ERROR', error: errorMessage },
+                    window.location.origin
+                )
+            } catch {
+                // Ignore cross-origin error if any
+            }
         }
-    }, [status])
+    }, [status, profileId, errorMessage])
 
     return (
         <div className="flex items-center justify-center min-h-[60vh]">
