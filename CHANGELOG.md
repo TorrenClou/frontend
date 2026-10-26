@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.2] - 2026-10-26
+
+* refactor(ui): extract shared getJobPhaseProgress and useCopyToClipboard (3d8e031)
+
 ## [2.6.1] - 2026-10-26
 
 * fix(ui): dual-repo update check, compositor progress transforms, and a11y polish (3288938)
