@@ -3,9 +3,9 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { JobCard } from '@/components/jobs/job-card'
+import { CompactTransferRow } from '@/components/jobs/CompactTransferRow'
 import { StatsCard } from '@/components/shared/StatsCard'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -14,8 +14,8 @@ import {
     HardDrive,
     Loader2,
     TrendingUp,
-    CheckCircle,
-    XCircle,
+    CheckCircle2,
+    AlertCircle,
     Clock,
     Search,
     ArrowRight,
@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
     const { data: jobsData, isLoading: jobsLoading } = useJobs({
         pageNumber: 1,
-        pageSize: 5,
+        pageSize: 6,
         phase: recentPhase !== 'all' ? recentPhase : undefined,
         status: null,
     })
@@ -66,7 +66,7 @@ export default function DashboardPage() {
     const activeSubtitle = useMemo(() => {
         if (liveDownSpeed || liveUpSpeed) {
             return (
-                <span className="inline-flex items-center gap-2 font-mono tabular-nums">
+                <span className="inline-flex items-center gap-2 font-mono tabular-nums text-xs">
                     {liveDownSpeed && <span className="text-primary-100">↓ {liveDownSpeed}</span>}
                     {liveUpSpeed && <span className="text-info-light">↑ {liveUpSpeed}</span>}
                 </span>
@@ -83,7 +83,7 @@ export default function DashboardPage() {
         const bytes = jobStats?.totalBytesTransferred ?? 0
         return (
             <span className="tabular-nums">
-                {bytes > 0 ? `${formatFileSize(bytes)} transferred` : 'View completed jobs'}
+                {bytes > 0 ? `${formatFileSize(bytes)} transferred` : 'All transfers delivered'}
             </span>
         )
     }, [jobStats?.totalBytesTransferred])
@@ -113,39 +113,48 @@ export default function DashboardPage() {
             {/* Header */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Overview of your active and completed cloud transfers
+                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+                        Dashboard
+                    </h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Live overview of two-stage cloud transfers and storage pipeline
                     </p>
                 </div>
-                <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
                     {(jobStats?.failedJobs ?? 0) > 0 && (
                         <Button
                             type="button"
                             variant="outline"
+                            size="sm"
                             onClick={() => retryAllFailedMutation.mutate({})}
                             disabled={retryAllFailedMutation.isPending}
-                            className="border-danger/40 bg-danger/10 text-danger-light hover:bg-danger/20 tabular-nums"
+                            className="border-danger/30 bg-danger/10 text-danger-light hover:bg-danger/20 tabular-nums h-9"
                         >
                             {retryAllFailedMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                             ) : (
-                                <RefreshCw className="mr-2 h-4 w-4" />
+                                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                             )}
                             Retry Failed ({jobStats?.failedJobs})
                         </Button>
                     )}
-                    <Button asChild size="lg">
+                    <Button asChild variant="outline" size="sm" className="h-9 border-surface-300/60 bg-surface-500/60">
+                        <Link href="/storage">
+                            <HardDrive className="mr-1.5 h-3.5 w-3.5" />
+                            Storage
+                        </Link>
+                    </Button>
+                    <Button asChild size="sm" className="h-9">
                         <Link href="/torrents/upload">
-                            <Upload className="mr-2 h-4 w-4" />
+                            <Upload className="mr-1.5 h-3.5 w-3.5" />
                             Upload Torrent
                         </Link>
                     </Button>
                 </div>
             </div>
 
-            {/* Interactive KPI Stats Cards -> Deep Link to /jobs */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Restrained KPI Stats Cards */}
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Total Jobs"
                     value={jobStats?.totalJobs ?? 0}
@@ -168,7 +177,7 @@ export default function DashboardPage() {
                     title="Completed"
                     value={jobStats?.completedJobs ?? 0}
                     subtitle={completedSubtitle}
-                    icon={CheckCircle}
+                    icon={CheckCircle2}
                     color="success"
                     loading={statsLoading}
                     href="/jobs?phase=completed"
@@ -177,49 +186,23 @@ export default function DashboardPage() {
                     title="Failed"
                     value={jobStats?.failedJobs ?? 0}
                     subtitle={failedSubtitle}
-                    icon={XCircle}
+                    icon={AlertCircle}
                     color="danger"
                     loading={statsLoading}
                     href="/jobs?phase=failed"
                 />
             </div>
 
-            {/* Quick Actions */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                        <Button asChild className="h-auto flex-col gap-2 py-4">
-                            <Link href="/torrents/upload">
-                                <Upload className="h-5 w-5" />
-                                <span>Upload Torrent</span>
-                            </Link>
-                        </Button>
-                        <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
-                            <Link href="/jobs">
-                                <FolderOpen className="h-5 w-5" />
-                                <span>View All Jobs</span>
-                            </Link>
-                        </Button>
-                        <Button asChild variant="outline" className="h-auto flex-col gap-2 py-4">
-                            <Link href="/storage">
-                                <HardDrive className="h-5 w-5" />
-                                <span>Manage Storage</span>
-                            </Link>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Recent Jobs with Phase Switcher, Quick Search & Inline Actions */}
-            <Card>
-                <div className="flex flex-col gap-3 p-6 pb-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Recent Transfers Activity Stream */}
+            <Card className="rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs">
+                <div className="flex flex-col gap-3 p-4 sm:p-5 border-b border-surface-300/30 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3 flex-wrap">
-                        <h2 className="text-lg font-semibold">Recent Jobs</h2>
+                        <h2 className="text-base font-semibold tracking-tight text-foreground">
+                            Recent Transfers
+                        </h2>
+                        {/* Phase Segmented Control */}
                         <div
-                            className="inline-flex items-center gap-1 rounded-lg bg-surface-400/70 p-1"
+                            className="inline-flex items-center gap-1 rounded-lg bg-surface-400/50 p-1 border border-surface-300/30"
                             role="group"
                             aria-label="Filter recent jobs by phase"
                         >
@@ -232,9 +215,9 @@ export default function DashboardPage() {
                                         aria-pressed={active}
                                         onClick={() => setRecentPhase(tab.id)}
                                         className={cn(
-                                            'rounded-md px-2.5 py-1 text-xs font-medium select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
+                                            'rounded-md px-2.5 py-1 text-xs font-medium select-none transition-all duration-150 ease-out-quart',
                                             active
-                                                ? 'bg-primary text-white'
+                                                ? 'bg-surface-300/80 text-foreground shadow-xs'
                                                 : 'text-muted-foreground hover:text-foreground'
                                         )}
                                     >
@@ -248,17 +231,17 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                         <form
                             onSubmit={handleQuickSearchSubmit}
-                            className="relative w-full sm:w-64"
+                            className="relative w-full sm:w-56"
                         >
                             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={quickSearch}
                                 onChange={(e) => setQuickSearch(e.target.value)}
-                                placeholder="Filter or search jobs..."
-                                className="h-8 pl-8 text-xs bg-surface-400/60"
+                                placeholder="Search transfers..."
+                                className="h-8 pl-8 text-xs bg-surface-400/40 border-surface-300/40 focus:border-primary/50"
                             />
                         </form>
-                        <Button asChild variant="ghost" size="sm" className="h-8 text-xs text-primary shrink-0">
+                        <Button asChild variant="ghost" size="sm" className="h-8 text-xs text-primary hover:text-primary-100 shrink-0">
                             <Link
                                 href={
                                     recentPhase !== 'all'
@@ -266,28 +249,28 @@ export default function DashboardPage() {
                                         : '/jobs'
                                 }
                             >
-                                Search & Filter Jobs
-                                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                                All Jobs
+                                <ArrowRight className="ml-1 h-3.5 w-3.5" />
                             </Link>
                         </Button>
                     </div>
                 </div>
 
-                <CardContent className="pt-0">
+                <CardContent className="p-4 sm:p-5 pt-4">
                     {jobsLoading ? (
                         <div className="flex items-center justify-center py-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
                     ) : recentJobs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <FolderOpen className="mb-3 h-12 w-12 text-muted-foreground" />
-                            <p className="text-muted-foreground">
+                            <FolderOpen className="mb-2.5 h-10 w-10 text-muted-foreground/60" />
+                            <p className="text-sm text-muted-foreground">
                                 {recentPhase === 'all'
-                                    ? 'No jobs yet'
-                                    : `No ${recentPhase} jobs right now`}
+                                    ? 'No transfer jobs yet'
+                                    : `No ${recentPhase} transfers found`}
                             </p>
                             {recentPhase === 'all' ? (
-                                <Button asChild variant="outline" size="sm" className="mt-4">
+                                <Button asChild variant="outline" size="sm" className="mt-3.5 h-8 text-xs">
                                     <Link href="/torrents/upload">Upload Torrent</Link>
                                 </Button>
                             ) : (
@@ -295,17 +278,17 @@ export default function DashboardPage() {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    className="mt-4"
+                                    className="mt-3.5 h-8 text-xs"
                                     onClick={() => setRecentPhase('all')}
                                 >
-                                    Show All Recent Jobs
+                                    Show All
                                 </Button>
                             )}
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {recentJobs.map((job) => (
-                                <JobCard
+                                <CompactTransferRow
                                     key={job.id}
                                     job={job}
                                     onRetry={(jobId) => retryJobMutation.mutate({ jobId })}
