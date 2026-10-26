@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.9.0] - 2026-10-26
+
+* feat(ui): implement multi-hue lifecycle color system for transfer states (9d42209)
+* fix(jobs): correctly display cancelled transfers in compact table and progress pipeline (ae3ca23)
+* feat(jobs): integrate permanent progress pipeline in job detail view (b14b1e4)
+* refactor(jobs): modernize JobDetailsCard with 1-click infohash copy and structured metadata (5fba3b4)
+* refactor(jobs): rebuild JobProgressCard as permanent dual-stage telemetry cockpit (96948e3)
+* refactor(jobs): modernize JobHeader with content-first typography and unified actions (491a1df)
+
 ## [2.8.0] - 2026-10-26
 
 * feat(jobs): streamline command console with dual view modes and floating batch actions (c8809c0)
