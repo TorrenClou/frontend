@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.0] - 2026-10-26
+
+* feat(jobs): streamline command console with dual view modes and floating batch actions (c8809c0)
+* feat(jobs): add CompactJobTableRow for high-density transfer triage (2e7285f)
+* refactor(jobs): modernize JobCard with UnifiedProgressPipeline and calm visual hierarchy (7e7f651)
+
 ## [2.7.0] - 2026-10-26
 
 * feat(dashboard): streamline executive dashboard layout and transfer stream (9c357cd)
