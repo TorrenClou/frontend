@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.0] - 2026-10-26
+
+* feat(jobs): build jobs command console with faceted filters, token search, dual-phase cards, and batch actions (d94456f)
+
 ## [2.3.0] - 2026-10-26
 
 * feat(ci): fold deploy repo into backend and unify all-in-one release pipeline (fdd6fa1)
