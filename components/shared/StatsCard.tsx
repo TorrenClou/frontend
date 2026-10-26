@@ -19,41 +19,26 @@ interface StatsCardProps {
     className?: string
 }
 
-const colorClasses = {
+const colorMap = {
     primary: {
-        surface: 'bg-surface-tonal-500/80 border-primary/25',
-        activeRing: 'ring-2 ring-primary border-primary/60 bg-primary/15',
-        hoverBorder: 'hover:border-primary/50 hover:bg-surface-tonal-400/60',
-        text: 'text-primary',
-        iconBg: 'bg-primary/15 border border-primary/25',
+        iconColor: 'text-primary-100',
+        activeRing: 'ring-1 ring-primary/60 border-primary/50 bg-primary/[0.04]',
     },
     info: {
-        surface: 'bg-surface-tonal-500/80 border-info/25',
-        activeRing: 'ring-2 ring-info-medium border-info-medium/60 bg-info/15',
-        hoverBorder: 'hover:border-info-medium/50 hover:bg-surface-tonal-400/60',
-        text: 'text-info-medium',
-        iconBg: 'bg-info/15 border border-info/25',
+        iconColor: 'text-info-light',
+        activeRing: 'ring-1 ring-info-medium/60 border-info-medium/50 bg-info/[0.04]',
     },
     success: {
-        surface: 'bg-surface-tonal-500/80 border-success/25',
-        activeRing: 'ring-2 ring-success border-success/60 bg-success/15',
-        hoverBorder: 'hover:border-success/50 hover:bg-surface-tonal-400/60',
-        text: 'text-success',
-        iconBg: 'bg-success/15 border border-success/25',
+        iconColor: 'text-success-medium',
+        activeRing: 'ring-1 ring-success/60 border-success/50 bg-success/[0.04]',
     },
     danger: {
-        surface: 'bg-surface-tonal-500/80 border-danger/25',
-        activeRing: 'ring-2 ring-danger border-danger/60 bg-danger/15',
-        hoverBorder: 'hover:border-danger/50 hover:bg-surface-tonal-400/60',
-        text: 'text-danger',
-        iconBg: 'bg-danger/15 border border-danger/25',
+        iconColor: 'text-danger-light',
+        activeRing: 'ring-1 ring-danger/60 border-danger/50 bg-danger/[0.04]',
     },
     warning: {
-        surface: 'bg-surface-tonal-500/80 border-warning/25',
-        activeRing: 'ring-2 ring-warning border-warning/60 bg-warning/15',
-        hoverBorder: 'hover:border-warning/50 hover:bg-surface-tonal-400/60',
-        text: 'text-warning',
-        iconBg: 'bg-warning/15 border border-warning/25',
+        iconColor: 'text-warning-light',
+        activeRing: 'ring-1 ring-warning/60 border-warning/50 bg-warning/[0.04]',
     },
 }
 
@@ -69,7 +54,7 @@ export function StatsCard({
     href,
     className,
 }: StatsCardProps) {
-    const colors = colorClasses[color]
+    const config = colorMap[color] || colorMap.primary
     const isInteractive = Boolean(onClick || href)
 
     const card = (
@@ -88,34 +73,37 @@ export function StatsCard({
                     : undefined
             }
             className={cn(
-                colors.surface,
-                'transition-[background-color,border-color,transform] duration-150 ease-out-quart',
+                'group relative rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs transition-[background-color,border-color,transform,box-shadow] duration-150 ease-out-quart',
                 isInteractive &&
-                    cn(
-                        'cursor-pointer select-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        colors.hoverBorder
-                    ),
-                active && colors.activeRing,
+                    'cursor-pointer select-none hover:border-surface-200/70 hover:bg-surface-400/40 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                active
+                    ? config.activeRing
+                    : 'hover:shadow-xs',
                 className
             )}
         >
-            <CardContent className="p-5 sm:p-6">
+            <CardContent className="p-4 sm:p-4.5">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-muted-foreground tracking-tight">
+                        <p className="text-[11px] font-medium tracking-tight text-muted-foreground uppercase">
                             {title}
                         </p>
-                        <p className={cn('text-2xl sm:text-3xl font-bold mt-1 font-mono tabular-nums', colors.text)}>
+                        <p className="text-2xl sm:text-3xl font-bold mt-1 text-foreground font-mono tabular-nums tracking-tight">
                             {loading ? '—' : value}
                         </p>
                         {subtitle && (
-                            <div className="mt-1.5 text-xs text-muted-foreground truncate tabular-nums">
+                            <div className="mt-1 text-xs text-muted-foreground truncate tabular-nums">
                                 {subtitle}
                             </div>
                         )}
                     </div>
-                    <div className={cn('h-11 w-11 shrink-0 rounded-xl flex items-center justify-center', colors.iconBg)}>
-                        <Icon className={cn('h-5 w-5', colors.text)} />
+                    <div
+                        className={cn(
+                            'h-9 w-9 shrink-0 rounded-lg flex items-center justify-center bg-surface-400/60 border border-surface-300/40 transition-colors duration-150 group-hover:bg-surface-300/50',
+                            config.iconColor
+                        )}
+                    >
+                        <Icon className="h-4 w-4" />
                     </div>
                 </div>
             </CardContent>
