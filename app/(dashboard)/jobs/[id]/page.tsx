@@ -71,11 +71,10 @@ export default function JobDetailsPage() {
         )
     }
 
-    const jobIsActive = isJobActive(job.status as JobStatus)
     const jobHasFailed = isJobFailed(job.status as JobStatus)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             <JobHeader
                 job={job}
                 onRetry={handleRetry}
@@ -85,16 +84,17 @@ export default function JobDetailsPage() {
                 isCancelling={isCancelling}
             />
 
-            <div className="grid gap-6 lg:grid-cols-3">
-                {/* Left: main content */}
-                <div className="lg:col-span-2 space-y-6">
+            <div className="grid gap-5 lg:grid-cols-3">
+                {/* Left: main transfer telemetry & specifications */}
+                <div className="lg:col-span-2 space-y-5">
                     <JobQueuedNotice
                         job={job}
                         onForceStart={handleForceStart}
                         isForceStarting={isForceStarting}
                     />
 
-                    {jobIsActive && <JobProgressCard job={job} />}
+                    {/* Permanent Two-Stage Pipeline Telemetry Cockpit */}
+                    <JobProgressCard job={job} />
 
                     {jobHasFailed && job.errorMessage && (
                         <JobErrorCard
@@ -110,8 +110,8 @@ export default function JobDetailsPage() {
                     <JobDetailsCard job={job} />
                 </div>
 
-                {/* Right: destination + timeline */}
-                <div className="space-y-6">
+                {/* Right: destination routing & audit timeline rail */}
+                <div className="space-y-5">
                     <JobDestinationCard job={job} />
                     <JobTimeline jobId={jobId} />
                 </div>
