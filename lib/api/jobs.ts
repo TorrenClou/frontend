@@ -317,6 +317,8 @@ export async function cancelJobs(request: {
     return normalizeBatchResult(response.data)
 }
 
+export const batchCancelJobs = cancelJobs
+
 export const jobsApi = {
     getJobs,
     getJob,
@@ -329,4 +331,5 @@ export const jobsApi = {
     cancelJob,
     retryFailedJobs,
     cancelJobs,
+    batchCancelJobs,
 }

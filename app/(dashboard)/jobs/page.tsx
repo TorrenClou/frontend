@@ -148,6 +148,7 @@ function JobsConsoleContent() {
     const urlWasRerouted = searchParams.get('wasRerouted') === 'true' ? true : null
     const urlIsStalled = searchParams.get('isStalled') === 'true' ? true : null
     const urlIsSelective = searchParams.get('isSelective') === 'true' ? true : null
+    const urlHasError = searchParams.get('hasError') === 'true' ? true : null
     const urlSortBy = (searchParams.get('sortBy') || 'createdAt') as JobSortField
     const urlSortDir = (searchParams.get('sortDir') || 'desc') as SortDirection
     const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
@@ -252,6 +253,7 @@ function JobsConsoleContent() {
             wasRerouted: urlWasRerouted ?? undefined,
             isStalled: urlIsStalled ?? undefined,
             isSelective: urlIsSelective ?? undefined,
+            hasError: urlHasError ?? undefined,
             sortBy: urlSortBy,
             sortDir: urlSortDir,
         }),
@@ -270,6 +272,7 @@ function JobsConsoleContent() {
             urlWasRerouted,
             urlIsStalled,
             urlIsSelective,
+            urlHasError,
             urlSortBy,
             urlSortDir,
         ]
@@ -305,6 +308,7 @@ function JobsConsoleContent() {
         urlWasRerouted,
         urlIsStalled,
         urlIsSelective,
+        urlHasError,
     ])
 
     // Phase tabs with live counts from statistics
@@ -457,6 +461,13 @@ function JobsConsoleContent() {
                 onRemove: () => updateUrlParams({ isSelective: null, page: 1 }),
             })
         }
+        if (urlHasError) {
+            chips.push({
+                key: 'hasError',
+                label: 'Has Error',
+                onRemove: () => updateUrlParams({ hasError: null, page: 1 }),
+            })
+        }
 
         return chips
     }, [
@@ -474,8 +485,11 @@ function JobsConsoleContent() {
         urlWasRerouted,
         urlIsStalled,
         urlIsSelective,
+        urlHasError,
         updateUrlParams,
     ])
+
+    const hasActiveFilters = activeFilterChips.length > 0
 
     const clearAllFilters = () => {
         setSearchInput('')
@@ -810,7 +824,7 @@ function JobsConsoleContent() {
                                     <span>{tab.label}</span>
                                     <span
                                         className={cn(
-                                            'rounded-full px-1.5 py-0.2 font-mono text-[11px]',
+                                            'rounded-full px-1.5 py-0.5 font-mono text-[11px]',
                                             isSelected
                                                 ? 'bg-black/25 text-white'
                                                 : 'bg-surface-300/80 text-muted-foreground'
@@ -1169,6 +1183,25 @@ function JobsConsoleContent() {
                                     </span>
                                 )}
                             </button>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    updateUrlParams({
+                                        hasError: urlHasError ? null : true,
+                                        page: 1,
+                                    })
+                                }
+                                className={cn(
+                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
+                                    urlHasError
+                                        ? 'border-danger/60 bg-danger/20 text-danger-light'
+                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
+                                )}
+                            >
+                                <AlertCircle className="h-3 w-3" />
+                                <span>Has Error</span>
+                            </button>
                         </div>
 
                         {/* Sort Control */}
@@ -1232,7 +1265,7 @@ function JobsConsoleContent() {
                     </div>
 
                     {/* Active Filter Summary & Reset */}
-                    {activeFilterChips.length > 0 && (
+                    {hasActiveFilters && (
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-surface-300/50 text-xs">
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-muted-foreground mr-1">Active filters:</span>
@@ -1280,7 +1313,7 @@ function JobsConsoleContent() {
                             type="checkbox"
                             checked={allOnPageSelected}
                             onChange={(e) => handleToggleSelectAllOnPage(e.target.checked)}
-                            className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-[#128775]"
+                            className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-primary"
                         />
                         <span>
                             {selectedJobIds.length > 0
@@ -1373,17 +1406,17 @@ function JobsConsoleContent() {
                 <EmptyState
                     icon={Upload}
                     title={
-                        activeFilterChips.length > 0
+                        hasActiveFilters
                             ? 'No jobs match your current filters'
                             : 'No transfer jobs yet'
                     }
                     description={
-                        activeFilterChips.length > 0
+                        hasActiveFilters
                             ? 'Try removing one or more filters or clearing your search query.'
                             : 'Upload a .torrent file to stage it and stream directly to Google Drive or S3.'
                     }
                     action={
-                        activeFilterChips.length > 0
+                        hasActiveFilters
                             ? { label: 'Clear All Filters', onClick: clearAllFilters }
                             : {
                                   label: 'Upload Torrent',

@@ -28,7 +28,6 @@ import {
     Ban,
     ChevronRight,
     FolderOpen,
-    HardDrive,
     FileText,
     RefreshCw,
     Cloud,
@@ -46,7 +45,6 @@ import {
     Play,
     ArrowDown,
     ArrowUp,
-    ArrowRight,
     Database,
     Layers,
     Loader2,
@@ -403,7 +401,7 @@ export function JobCard({
                                     aria-label={`Select job ${displayTitle}`}
                                     checked={selected}
                                     onChange={(e) => onSelectChange?.(e.target.checked)}
-                                    className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-[#128775]"
+                                    className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-primary"
                                 />
                             </div>
                         )}
@@ -646,7 +644,7 @@ export function JobCard({
                             {/* Dual-Stage Progress Pipeline */}
                             {showPipeline && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                                    {/* Stage 1: BitTorrent Download */}
+                                    {/* Download Phase: BitTorrent Download */}
                                     <div
                                         className={cn(
                                             'rounded-lg border px-3 py-2 transition-colors',
@@ -660,7 +658,7 @@ export function JobCard({
                                         <div className="flex items-center justify-between text-xs mb-1.5">
                                             <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90">
                                                 <Download className="h-3.5 w-3.5 text-primary-200" />
-                                                <span>Stage 1 · BitTorrent</span>
+                                                <span>Download Phase · BitTorrent</span>
                                             </span>
                                             <div className="flex items-center gap-2 font-mono">
                                                 {downloadSpeed && (
@@ -717,7 +715,7 @@ export function JobCard({
                                         </div>
                                     </div>
 
-                                    {/* Stage 2: Cloud Upload */}
+                                    {/* Upload Phase: Cloud Upload */}
                                     <div
                                         className={cn(
                                             'rounded-lg border px-3 py-2 transition-colors',
@@ -734,7 +732,7 @@ export function JobCard({
                                             <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90 truncate">
                                                 <Upload className="h-3.5 w-3.5 text-info-light shrink-0" />
                                                 <span className="truncate">
-                                                    Stage 2 · {job.storageProfileName || 'Cloud Upload'}
+                                                    Upload Phase · {job.storageProfileName || 'Cloud Upload'}
                                                 </span>
                                             </span>
                                             <div className="flex items-center gap-2 font-mono shrink-0">
@@ -789,7 +787,7 @@ export function JobCard({
                                                         ? 'Failed'
                                                         : status === JobStatus.PENDING_UPLOAD
                                                           ? 'Awaiting worker'
-                                                          : 'Waiting for Stage 1'}
+                                                          : 'Waiting for Download Phase'}
                                             </span>
                                         </div>
                                     </div>
