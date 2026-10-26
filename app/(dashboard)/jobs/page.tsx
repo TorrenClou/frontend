@@ -17,6 +17,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { JobCard } from '@/components/jobs/job-card'
+import { CompactJobTableRow } from '@/components/jobs/CompactJobTableRow'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { StatsCard } from '@/components/shared'
@@ -61,6 +62,9 @@ import {
     Database,
     Cloud,
     Terminal,
+    LayoutList,
+    LayoutGrid,
+    SlidersHorizontal,
 } from 'lucide-react'
 
 const QUICK_SEARCH_TOKENS = [
@@ -134,6 +138,10 @@ function JobsConsoleContent() {
     const pathname = usePathname()
     const searchInputRef = useRef<HTMLInputElement>(null)
 
+    // View mode state: 'compact' (dense table row) vs 'detailed' (expanded card)
+    const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact')
+    const [showFiltersPanel, setShowFiltersPanel] = useState(false)
+
     // Parse URL query state
     const urlPhase = (searchParams.get('phase') || 'all') as JobPhaseFilter
     const urlStatus = searchParams.get('status') || null
@@ -151,50 +159,36 @@ function JobsConsoleContent() {
     const urlHasError = searchParams.get('hasError') === 'true' ? true : null
     const urlSortBy = (searchParams.get('sortBy') || 'createdAt') as JobSortField
     const urlSortDir = (searchParams.get('sortDir') || 'desc') as SortDirection
-    const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1)
-    const urlPageSize = Math.max(1, parseInt(searchParams.get('size') || '10', 10) || 10)
+    const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+    const urlPageSize = Math.max(5, parseInt(searchParams.get('size') || '10', 10))
 
-    // Local search input state for snappy typing with 250ms debounce
+    // Local state for debounced search
     const [searchInput, setSearchInput] = useState(urlSearch)
     const [debouncedSearch, setDebouncedSearch] = useState(urlSearch)
+
+    // Selection state for batch operations
     const [selectedJobIds, setSelectedJobIds] = useState<number[]>([])
 
-    // Keep local search synced if URL changes externally (e.g., Clear Filters)
-    useEffect(() => {
-        setSearchInput(urlSearch)
-        setDebouncedSearch(urlSearch)
-    }, [urlSearch])
+    // Storage profiles for destination facet
+    const { data: storageProfiles = [] } = useStorageProfiles()
 
-    // Update URL helper
+    // Helper to update URL query params
     const updateUrlParams = useCallback(
         (
             updates: Record<string, string | number | boolean | null | undefined>,
-            mode: 'push' | 'replace' = 'replace'
+            mode: 'push' | 'replace' = 'push'
         ) => {
-            const params = new URLSearchParams(searchParams.toString())
-            // Normalize legacy 'search' param into 'q'
-            params.delete('search')
+            const nextParams = new URLSearchParams(searchParams.toString())
 
-            Object.entries(updates).forEach(([key, value]) => {
-                if (
-                    value === null ||
-                    value === undefined ||
-                    value === '' ||
-                    value === false ||
-                    (key === 'phase' && value === 'all') ||
-                    (key === 'page' && value === 1) ||
-                    (key === 'size' && value === 10) ||
-                    (key === 'sortBy' && value === 'createdAt') ||
-                    (key === 'sortDir' && value === 'desc')
-                ) {
-                    params.delete(key)
+            Object.entries(updates).forEach(([key, val]) => {
+                if (val === null || val === undefined || val === '') {
+                    nextParams.delete(key)
                 } else {
-                    params.set(key, String(value))
+                    nextParams.set(key, String(val))
                 }
             })
 
-            const qs = params.toString()
-            const target = qs ? `${pathname}?${qs}` : pathname
+            const target = `${pathname}?${nextParams.toString()}`
             if (mode === 'push') {
                 router.push(target, { scroll: false })
             } else {
@@ -278,11 +272,10 @@ function JobsConsoleContent() {
         ]
     )
 
+    // Data fetching queries & mutations
     const { data, isLoading, isFetching, error, refetch } = useJobs(queryParams)
     const { data: jobStats } = useJobStatistics()
-    const { data: storageProfiles } = useStorageProfiles()
 
-    // Mutations for inline & batch actions
     const retryJobMutation = useRetryJob()
     const forceStartMutation = useForceStartJob()
     const cancelJobMutation = useCancelJob()
@@ -291,50 +284,47 @@ function JobsConsoleContent() {
 
     const items = data?.items ?? []
 
-    // Clear selection when page or filter changes
-    useEffect(() => {
-        setSelectedJobIds([])
-    }, [
-        urlPage,
-        urlPhase,
-        urlStatus,
-        debouncedSearch,
-        urlProvider,
-        urlProfileId,
-        urlCategory,
-        urlSizeBucket,
-        urlDateRange,
-        urlIsPinned,
-        urlWasRerouted,
-        urlIsStalled,
-        urlIsSelective,
-        urlHasError,
-    ])
+    // Phase tab configuration with server-provided statistics
+    const phaseTabs = useMemo(
+        () => [
+            {
+                id: 'all' as JobPhaseFilter,
+                label: 'All Transfers',
+                count: jobStats?.totalJobs ?? 0,
+            },
+            {
+                id: 'active' as JobPhaseFilter,
+                label: 'Active',
+                count: jobStats?.activeJobs ?? 0,
+            },
+            {
+                id: 'downloading' as JobPhaseFilter,
+                label: 'Downloading',
+                count: jobStats?.downloadingJobs ?? 0,
+            },
+            {
+                id: 'uploading' as JobPhaseFilter,
+                label: 'Uploading',
+                count: (jobStats?.uploadingJobs ?? 0) + (jobStats?.pendingUploadJobs ?? 0),
+            },
+            {
+                id: 'completed' as JobPhaseFilter,
+                label: 'Completed',
+                count: jobStats?.completedJobs ?? 0,
+            },
+            {
+                id: 'failed' as JobPhaseFilter,
+                label: 'Failed',
+                count: jobStats?.failedJobs ?? 0,
+            },
+        ],
+        [jobStats]
+    )
 
-    // Phase tabs with live counts from statistics
-    const phaseTabs = useMemo(() => {
-        const uploadingTotal =
-            (jobStats?.uploadingJobs ?? 0) + (jobStats?.pendingUploadJobs ?? 0)
-        return [
-            { id: 'all', label: 'All', count: jobStats?.totalJobs ?? 0 },
-            { id: 'active', label: 'Active', count: jobStats?.activeJobs ?? 0 },
-            { id: 'downloading', label: 'Downloading', count: jobStats?.downloadingJobs ?? 0 },
-            { id: 'uploading', label: 'Uploading', count: uploadingTotal },
-            { id: 'queued', label: 'Queued', count: jobStats?.queuedJobs ?? 0 },
-            { id: 'retrying', label: 'Retrying', count: jobStats?.retryingJobs ?? 0 },
-            { id: 'completed', label: 'Completed', count: jobStats?.completedJobs ?? 0 },
-            { id: 'failed', label: 'Failed', count: jobStats?.failedJobs ?? 0 },
-            { id: 'cancelled', label: 'Cancelled', count: jobStats?.cancelledJobs ?? 0 },
-        ]
-    }, [jobStats])
-
-    // Merge storage profiles from statistics and useStorageProfiles
+    // Unified destination profile list merging user profiles + stats facet
     const destinationProfiles = useMemo(() => {
-        const map = new Map<
-            number,
-            { id: number; name: string; providerType: string; count?: number }
-        >()
-        for (const p of storageProfiles ?? []) {
+        const map = new Map<number, { id: number; name: string; providerType: string; count?: number }>()
+        for (const p of storageProfiles) {
             map.set(p.id, {
                 id: p.id,
                 name: p.profileName,
@@ -397,7 +387,7 @@ function JobsConsoleContent() {
         if (urlProvider) {
             chips.push({
                 key: 'provider',
-                label: `Provider: ${urlProvider === 'GoogleDrive' ? 'Google Drive' : urlProvider}`,
+                label: `Provider: ${urlProvider === 'GoogleDrive' ? 'Google Drive' : 'S3'}`,
                 onRemove: () => updateUrlParams({ provider: null, page: 1 }),
             })
         }
@@ -405,7 +395,7 @@ function JobsConsoleContent() {
             const prof = destinationProfiles.find((p) => p.id === urlProfileId)
             chips.push({
                 key: 'storageProfileId',
-                label: `Drive: ${prof?.name || `#${urlProfileId}`}`,
+                label: `Profile: ${prof?.name || urlProfileId}`,
                 onRemove: () => updateUrlParams({ storageProfileId: null, page: 1 }),
             })
         }
@@ -413,7 +403,7 @@ function JobsConsoleContent() {
             const cat = CATEGORY_OPTIONS.find((c) => c.value === urlCategory)
             chips.push({
                 key: 'category',
-                label: `Type: ${cat?.label || urlCategory}`,
+                label: `Category: ${cat?.label || urlCategory}`,
                 onRemove: () => updateUrlParams({ category: null, page: 1 }),
             })
         }
@@ -443,7 +433,7 @@ function JobsConsoleContent() {
         if (urlWasRerouted) {
             chips.push({
                 key: 'wasRerouted',
-                label: 'Failover Rerouted',
+                label: 'Rerouted Only',
                 onRemove: () => updateUrlParams({ wasRerouted: null, page: 1 }),
             })
         }
@@ -490,6 +480,18 @@ function JobsConsoleContent() {
     ])
 
     const hasActiveFilters = activeFilterChips.length > 0
+    const facetFilterCount = [
+        urlProvider,
+        urlProfileId,
+        urlCategory,
+        urlSizeBucket,
+        urlDateRange,
+        urlIsPinned,
+        urlWasRerouted,
+        urlIsStalled,
+        urlIsSelective,
+        urlHasError,
+    ].filter(Boolean).length
 
     const clearAllFilters = () => {
         setSearchInput('')
@@ -522,7 +524,7 @@ function JobsConsoleContent() {
     const activeSubtitle = useMemo(() => {
         if (liveDownSpeed || liveUpSpeed) {
             return (
-                <span className="inline-flex items-center gap-2 font-mono">
+                <span className="inline-flex items-center gap-2 font-mono text-xs">
                     {liveDownSpeed && <span className="text-primary-100">↓ {liveDownSpeed}</span>}
                     {liveUpSpeed && <span className="text-info-light">↑ {liveUpSpeed}</span>}
                 </span>
@@ -549,12 +551,12 @@ function JobsConsoleContent() {
     const endItem = Math.min(urlPage * urlPageSize, totalCount)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {/* Header Bar */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="flex items-center gap-2.5">
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                             Transfer Jobs
                         </h1>
                         {isFetching && !isLoading && (
@@ -566,27 +568,28 @@ function JobsConsoleContent() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                     {(jobStats?.failedJobs ?? 0) > 0 && (
                         <Button
                             type="button"
                             variant="outline"
+                            size="sm"
                             onClick={() => retryFailedBatchMutation.mutate({})}
                             disabled={retryFailedBatchMutation.isPending}
-                            className="border-danger/40 bg-danger/10 text-danger-light hover:bg-danger/20"
+                            className="border-danger/30 bg-danger/10 text-danger-light hover:bg-danger/20 h-9"
                         >
                             {retryFailedBatchMutation.isPending ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                             ) : (
-                                <RefreshCw className="mr-2 h-4 w-4" />
+                                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                             )}
                             Retry All Failed ({jobStats?.failedJobs})
                         </Button>
                     )}
 
-                    <Button asChild>
+                    <Button asChild size="sm" className="h-9">
                         <Link href="/torrents/upload">
-                            <Upload className="mr-2 h-4 w-4" />
+                            <Upload className="mr-1.5 h-3.5 w-3.5" />
                             New Transfer
                         </Link>
                     </Button>
@@ -594,11 +597,11 @@ function JobsConsoleContent() {
             </div>
 
             {/* 1. Clickable KPI Summary Row */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Total Jobs"
                     value={jobStats?.totalJobs ?? 0}
-                    subtitle={`${destinationProfiles.length || 1} configured destination${destinationProfiles.length === 1 ? '' : 's'}`}
+                    subtitle={`${destinationProfiles.length || 1} destination${destinationProfiles.length === 1 ? '' : 's'}`}
                     icon={TrendingUp}
                     color="primary"
                     active={urlPhase === 'all' && !urlStatus}
@@ -635,7 +638,7 @@ function JobsConsoleContent() {
                     }
                 />
                 <StatsCard
-                    title="Failed / Needs Attention"
+                    title="Failed / Attention"
                     value={jobStats?.failedJobs ?? 0}
                     subtitle={failedSubtitle}
                     icon={XCircle}
@@ -651,53 +654,55 @@ function JobsConsoleContent() {
                 />
             </div>
 
-            {/* Command Console Card */}
-            <Card className="border-surface-300/70 bg-surface-500/90">
-                <CardContent className="p-4 sm:p-5 space-y-4">
-                    {/* 2. Token-Aware Command Search Bar + Smart Presets */}
-                    <div className="space-y-2.5">
-                        <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                                <Input
-                                    ref={searchInputRef}
-                                    value={searchInput}
-                                    onChange={(e) => setSearchInput(e.target.value)}
-                                    placeholder="Search filename, InfoHash, profile, error, or tokens (provider:s3 is:pinned type:video)..."
-                                    className="pl-10 pr-20 h-10 bg-surface-400/70 border-surface-300 focus-visible:ring-primary font-mono text-sm"
-                                />
-                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                                    {searchInput ? (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSearchInput('')
-                                                setDebouncedSearch('')
-                                                updateUrlParams({ q: null, page: 1 })
-                                            }}
-                                            className="rounded p-1 text-muted-foreground hover:text-foreground hover:bg-surface-300/60"
-                                            aria-label="Clear search"
-                                        >
-                                            <X className="h-3.5 w-3.5" />
-                                        </button>
-                                    ) : (
-                                        <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-surface-200/70 bg-surface-300/60 px-1.5 font-mono text-[10px] text-muted-foreground">
-                                            /
-                                        </kbd>
-                                    )}
-                                </div>
+            {/* 2. Streamlined Command Console Toolbar */}
+            <Card className="rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs">
+                <CardContent className="p-3.5 sm:p-4 space-y-3">
+                    {/* Row 1: Search + Smart Views + Facets Toggle + Sort + View Mode */}
+                    <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                            <Input
+                                ref={searchInputRef}
+                                value={searchInput}
+                                onChange={(e) => setSearchInput(e.target.value)}
+                                placeholder="Search filename, InfoHash, profile, or tokens (provider:s3 is:pinned)..."
+                                className="pl-9 pr-14 h-9 bg-surface-400/40 border-surface-300/40 focus-visible:ring-primary/50 text-xs font-mono"
+                            />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                {searchInput ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchInput('')
+                                            setDebouncedSearch('')
+                                            updateUrlParams({ q: null, page: 1 })
+                                        }}
+                                        className="rounded p-0.5 text-muted-foreground hover:text-foreground hover:bg-surface-300/60"
+                                        aria-label="Clear search"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                ) : (
+                                    <kbd className="hidden sm:inline-flex h-4 items-center rounded border border-surface-200/50 bg-surface-300/50 px-1 font-mono text-[9px] text-muted-foreground">
+                                        /
+                                    </kbd>
+                                )}
                             </div>
+                        </div>
 
-                            {/* Smart View Presets Dropdown */}
+                        {/* Controls Toolbar Strip */}
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            {/* Smart Views Presets */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="h-10 shrink-0 gap-2">
-                                        <Sparkles className="h-4 w-4 text-primary-200" />
-                                        <span>Smart Views</span>
-                                        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                                    <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs border-surface-300/50 bg-surface-400/40">
+                                        <Sparkles className="h-3.5 w-3.5 text-primary-100" />
+                                        <span className="hidden sm:inline">Views</span>
+                                        <ChevronDown className="h-3 w-3 opacity-60" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-60">
+                                <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>Quick Filter Presets</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -710,7 +715,7 @@ function JobsConsoleContent() {
                                             })
                                         }
                                     >
-                                        <AlertCircle className="mr-2 h-4 w-4 text-danger-medium" />
+                                        <AlertCircle className="mr-2 h-3.5 w-3.5 text-danger-light" />
                                         Needs Attention (Failed)
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
@@ -722,7 +727,7 @@ function JobsConsoleContent() {
                                             })
                                         }
                                     >
-                                        <AlertTriangle className="mr-2 h-4 w-4 text-warning-medium" />
+                                        <AlertTriangle className="mr-2 h-3.5 w-3.5 text-warning-medium" />
                                         Stalled Active Transfers
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
@@ -734,8 +739,8 @@ function JobsConsoleContent() {
                                             })
                                         }
                                     >
-                                        <Shuffle className="mr-2 h-4 w-4 text-warning-light" />
-                                        Failover Rerouted Jobs
+                                        <Shuffle className="mr-2 h-3.5 w-3.5 text-warning-light" />
+                                        Failover Rerouted
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() =>
@@ -747,8 +752,8 @@ function JobsConsoleContent() {
                                             })
                                         }
                                     >
-                                        <Film className="mr-2 h-4 w-4 text-primary-200" />
-                                        Large Video Transfers (10GB+)
+                                        <Film className="mr-2 h-3.5 w-3.5 text-primary-100" />
+                                        Large Videos (10GB+)
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() =>
@@ -760,502 +765,73 @@ function JobsConsoleContent() {
                                             })
                                         }
                                     >
-                                        <Pin className="mr-2 h-4 w-4 text-info-light" />
+                                        <Pin className="mr-2 h-3.5 w-3.5 text-info-light" />
                                         Pinned S3 Transfers
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                        </div>
 
-                        {/* Interactive Search Token Pill Strip */}
-                        <div className="flex items-center gap-1.5 flex-wrap text-xs">
-                            <span className="inline-flex items-center gap-1 text-muted-foreground mr-1">
-                                <Terminal className="h-3 w-3" />
-                                <span>Tokens:</span>
-                            </span>
-                            {QUICK_SEARCH_TOKENS.map(({ token, label }) => {
-                                const active = hasTokenInQuery(searchInput, token)
-                                return (
-                                    <button
-                                        key={token}
-                                        type="button"
-                                        aria-pressed={active}
-                                        onClick={() => {
-                                            const next = toggleTokenInQuery(searchInput, token)
-                                            setSearchInput(next)
-                                            setDebouncedSearch(next)
-                                            updateUrlParams({ q: next || null, page: 1 })
-                                        }}
-                                        className={cn(
-                                            'inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[11px] transition-colors border',
-                                            active
-                                                ? 'border-primary bg-primary/20 text-primary-50 font-semibold'
-                                                : 'border-surface-300/80 bg-surface-400/50 text-muted-foreground hover:text-foreground hover:border-surface-200'
-                                        )}
-                                    >
-                                        {label}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </div>
-
-                    {/* 3. Primary Phase Segmented Bar */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-y border-surface-300/50 py-2.5">
-                        {phaseTabs.map((tab) => {
-                            const isSelected = urlPhase === tab.id && !urlStatus
-                            return (
-                                <button
-                                    key={tab.id}
-                                    type="button"
-                                    aria-pressed={isSelected}
-                                    onClick={() =>
-                                        updateUrlParams({
-                                            phase: tab.id,
-                                            status: null,
-                                            page: 1,
-                                        })
-                                    }
-                                    className={cn(
-                                        'inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all shrink-0',
-                                        isSelected
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : 'bg-surface-400/60 text-muted-foreground hover:text-foreground hover:bg-surface-300/60'
-                                    )}
-                                >
-                                    <span>{tab.label}</span>
-                                    <span
-                                        className={cn(
-                                            'rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums',
-                                            isSelected
-                                                ? 'bg-black/25 text-white'
-                                                : 'bg-surface-300/80 text-muted-foreground'
-                                        )}
-                                    >
-                                        {tab.count}
+                            {/* Facets Expand Button */}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowFiltersPanel((prev) => !prev)}
+                                className={cn(
+                                    'h-9 gap-1.5 text-xs border-surface-300/50 bg-surface-400/40',
+                                    (showFiltersPanel || facetFilterCount > 0) &&
+                                        'border-primary/50 text-primary-100 bg-primary/10'
+                                )}
+                            >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                                <span>Filters</span>
+                                {facetFilterCount > 0 && (
+                                    <span className="rounded-full bg-primary/25 px-1.5 py-0.2 text-[10px] font-mono font-semibold">
+                                        {facetFilterCount}
                                     </span>
-                                </button>
-                            )
-                        })}
-                    </div>
+                                )}
+                            </Button>
 
-                    {/* 4. Secondary Facet Filter Row + Trait Pills + Sort Control */}
-                    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {/* Storage Destination Dropdown */}
+                            {/* Sort Dropdown */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            'h-8 gap-1.5 text-xs',
-                                            (urlProvider || urlProfileId) &&
-                                                'border-primary/60 bg-primary/15 text-primary-50'
-                                        )}
-                                    >
-                                        <HardDrive className="h-3.5 w-3.5" />
-                                        <span>{selectedDestinationLabel}</span>
-                                        <ChevronDown className="h-3 w-3 opacity-60" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-64">
-                                    <DropdownMenuLabel>Storage Destination</DropdownMenuLabel>
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            updateUrlParams({
-                                                provider: null,
-                                                storageProfileId: null,
-                                                page: 1,
-                                            })
-                                        }
-                                        className="justify-between"
-                                    >
-                                        <span>All Destinations</span>
-                                        {!urlProvider && !urlProfileId && (
-                                            <Check className="h-3.5 w-3.5" />
-                                        )}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                                        By Cloud Provider
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            updateUrlParams({
-                                                provider: 'GoogleDrive',
-                                                storageProfileId: null,
-                                                page: 1,
-                                            })
-                                        }
-                                        className="justify-between"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <Cloud className="h-3.5 w-3.5 text-primary-200" />
-                                            Google Drive
-                                        </span>
-                                        <span className="font-mono text-xs text-muted-foreground">
-                                            {jobStats?.providerCounts?.GoogleDrive ?? ''}
-                                        </span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={() =>
-                                            updateUrlParams({
-                                                provider: 'S3',
-                                                storageProfileId: null,
-                                                page: 1,
-                                            })
-                                        }
-                                        className="justify-between"
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <Database className="h-3.5 w-3.5 text-warning-medium" />
-                                            S3 Compatible
-                                        </span>
-                                        <span className="font-mono text-xs text-muted-foreground">
-                                            {jobStats?.providerCounts?.S3 ?? ''}
-                                        </span>
-                                    </DropdownMenuItem>
-
-                                    {destinationProfiles.length > 0 && (
-                                        <>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                                                By Storage Profile
-                                            </DropdownMenuLabel>
-                                            {destinationProfiles.map((prof) => (
-                                                <DropdownMenuItem
-                                                    key={prof.id}
-                                                    onClick={() =>
-                                                        updateUrlParams({
-                                                            storageProfileId: prof.id,
-                                                            provider: null,
-                                                            page: 1,
-                                                        })
-                                                    }
-                                                    className="justify-between"
-                                                >
-                                                    <span className="truncate pr-2">
-                                                        {prof.name}
-                                                    </span>
-                                                    <span className="font-mono text-xs text-muted-foreground">
-                                                        {prof.count ?? ''}
-                                                    </span>
-                                                </DropdownMenuItem>
-                                            ))}
-                                        </>
-                                    )}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Media Category Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            'h-8 gap-1.5 text-xs',
-                                            urlCategory &&
-                                                'border-primary/60 bg-primary/15 text-primary-50'
-                                        )}
-                                    >
-                                        <Film className="h-3.5 w-3.5" />
-                                        <span>
-                                            {CATEGORY_OPTIONS.find((c) => c.value === (urlCategory || ''))
-                                                ?.label || 'Category'}
+                                    <Button variant="outline" size="sm" className="h-9 gap-1 text-xs border-surface-300/50 bg-surface-400/40">
+                                        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                                        <span className="hidden sm:inline">
+                                            {SORT_OPTIONS.find((s) => s.value === urlSortBy)?.label || 'Sort'}
                                         </span>
                                         <ChevronDown className="h-3 w-3 opacity-60" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-48">
-                                    <DropdownMenuLabel>Media Category</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {CATEGORY_OPTIONS.map((cat) => {
-                                        const count = cat.value
-                                            ? jobStats?.categoryCounts?.[cat.value]
-                                            : undefined
-                                        return (
-                                            <DropdownMenuItem
-                                                key={cat.value || 'all'}
-                                                onClick={() =>
-                                                    updateUrlParams({
-                                                        category: cat.value || null,
-                                                        page: 1,
-                                                    })
-                                                }
-                                                className="justify-between"
-                                            >
-                                                <span>{cat.label}</span>
-                                                {count !== undefined && (
-                                                    <span className="font-mono text-xs text-muted-foreground">
-                                                        {count}
-                                                    </span>
-                                                )}
-                                            </DropdownMenuItem>
-                                        )
-                                    })}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Size Bucket Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            'h-8 gap-1.5 text-xs',
-                                            urlSizeBucket &&
-                                                'border-primary/60 bg-primary/15 text-primary-50'
-                                        )}
-                                    >
-                                        <Layers className="h-3.5 w-3.5" />
-                                        <span>
-                                            {SIZE_BUCKET_OPTIONS.find(
-                                                (s) => s.value === (urlSizeBucket || '')
-                                            )?.label || 'Any Size'}
-                                        </span>
-                                        <ChevronDown className="h-3 w-3 opacity-60" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-52">
-                                    <DropdownMenuLabel>Transfer Size</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {SIZE_BUCKET_OPTIONS.map((sb) => {
-                                        const count = sb.value
-                                            ? jobStats?.sizeBucketCounts?.[sb.value]
-                                            : undefined
-                                        return (
-                                            <DropdownMenuItem
-                                                key={sb.value || 'any'}
-                                                onClick={() =>
-                                                    updateUrlParams({
-                                                        sizeBucket: sb.value || null,
-                                                        page: 1,
-                                                    })
-                                                }
-                                                className="justify-between"
-                                            >
-                                                <span>{sb.label}</span>
-                                                {count !== undefined && (
-                                                    <span className="font-mono text-xs text-muted-foreground">
-                                                        {count}
-                                                    </span>
-                                                )}
-                                            </DropdownMenuItem>
-                                        )
-                                    })}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Date Range Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            'h-8 gap-1.5 text-xs',
-                                            urlDateRange &&
-                                                'border-primary/60 bg-primary/15 text-primary-50'
-                                        )}
-                                    >
-                                        <Calendar className="h-3.5 w-3.5" />
-                                        <span>
-                                            {DATE_RANGE_OPTIONS.find(
-                                                (d) => d.value === (urlDateRange || '')
-                                            )?.label || 'Any Time'}
-                                        </span>
-                                        <ChevronDown className="h-3 w-3 opacity-60" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="w-44">
-                                    <DropdownMenuLabel>Created Date</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {DATE_RANGE_OPTIONS.map((dr) => (
-                                        <DropdownMenuItem
-                                            key={dr.value || 'all'}
-                                            onClick={() =>
-                                                updateUrlParams({
-                                                    dateRange: dr.value || null,
-                                                    page: 1,
-                                                })
-                                            }
-                                        >
-                                            {dr.label}
-                                        </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            {/* Trait Quick-Toggle Pills */}
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    updateUrlParams({
-                                        isPinned: urlIsPinned ? null : true,
-                                        page: 1,
-                                    })
-                                }
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                                    urlIsPinned
-                                        ? 'border-primary/60 bg-primary/20 text-primary-50'
-                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
-                                )}
-                            >
-                                <Pin className="h-3 w-3" />
-                                <span>Pinned</span>
-                                {(jobStats?.pinnedJobs ?? 0) > 0 && (
-                                    <span className="font-mono text-[11px] opacity-80">
-                                        ({jobStats?.pinnedJobs})
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    updateUrlParams({
-                                        wasRerouted: urlWasRerouted ? null : true,
-                                        page: 1,
-                                    })
-                                }
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                                    urlWasRerouted
-                                        ? 'border-warning/60 bg-warning/20 text-warning-light'
-                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
-                                )}
-                            >
-                                <Shuffle className="h-3 w-3" />
-                                <span>Rerouted</span>
-                                {(jobStats?.reroutedJobs ?? 0) > 0 && (
-                                    <span className="font-mono text-[11px] opacity-80">
-                                        ({jobStats?.reroutedJobs})
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    updateUrlParams({
-                                        isStalled: urlIsStalled ? null : true,
-                                        page: 1,
-                                    })
-                                }
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                                    urlIsStalled
-                                        ? 'border-warning/60 bg-warning/20 text-warning-light'
-                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
-                                )}
-                            >
-                                <AlertTriangle className="h-3 w-3" />
-                                <span>Stalled</span>
-                                {(jobStats?.stalledJobs ?? 0) > 0 && (
-                                    <span className="font-mono text-[11px] opacity-80">
-                                        ({jobStats?.stalledJobs})
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    updateUrlParams({
-                                        isSelective: urlIsSelective ? null : true,
-                                        page: 1,
-                                    })
-                                }
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                                    urlIsSelective
-                                        ? 'border-info/60 bg-info/20 text-info-light'
-                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
-                                )}
-                            >
-                                <Layers className="h-3 w-3" />
-                                <span>Selective</span>
-                                {(jobStats?.selectiveJobs ?? 0) > 0 && (
-                                    <span className="font-mono text-[11px] opacity-80">
-                                        ({jobStats?.selectiveJobs})
-                                    </span>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    updateUrlParams({
-                                        hasError: urlHasError ? null : true,
-                                        page: 1,
-                                    })
-                                }
-                                className={cn(
-                                    'inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors',
-                                    urlHasError
-                                        ? 'border-danger/60 bg-danger/20 text-danger-light'
-                                        : 'border-surface-300 bg-transparent text-muted-foreground hover:text-foreground hover:bg-surface-400'
-                                )}
-                            >
-                                <AlertCircle className="h-3 w-3" />
-                                <span>Has Error</span>
-                            </button>
-                        </div>
-
-                        {/* Sort Control */}
-                        <div className="flex items-center gap-1.5 shrink-0 self-end xl:self-auto">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
-                                        <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <span>
-                                            Sort:{' '}
-                                            {SORT_OPTIONS.find((s) => s.value === urlSortBy)?.label ||
-                                                'Created Date'}
-                                        </span>
-                                        <ChevronDown className="h-3 w-3 opacity-60" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-44">
                                     <DropdownMenuLabel>Sort Jobs By</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {SORT_OPTIONS.map((opt) => (
                                         <DropdownMenuItem
                                             key={opt.value}
-                                            onClick={() =>
-                                                updateUrlParams({ sortBy: opt.value, page: 1 })
-                                            }
-                                            className="justify-between"
+                                            onClick={() => updateUrlParams({ sortBy: opt.value, page: 1 })}
+                                            className="justify-between text-xs"
                                         >
                                             <span>{opt.label}</span>
-                                            {urlSortBy === opt.value && (
-                                                <Check className="h-3.5 w-3.5" />
-                                            )}
+                                            {urlSortBy === opt.value && <Check className="h-3.5 w-3.5" />}
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
+                            {/* Sort Direction Toggle */}
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="h-8 px-2.5 text-xs"
+                                className="h-9 w-9 p-0 border-surface-300/50 bg-surface-400/40"
                                 onClick={() =>
                                     updateUrlParams({
                                         sortDir: urlSortDir === 'desc' ? 'asc' : 'desc',
                                         page: 1,
                                     })
                                 }
-                                title={
-                                    urlSortDir === 'desc'
-                                        ? 'Descending order (click for ascending)'
-                                        : 'Ascending order (click for descending)'
-                                }
+                                title={`Sort ${urlSortDir === 'desc' ? 'Ascending' : 'Descending'}`}
                             >
                                 {urlSortDir === 'desc' ? (
                                     <ArrowDown className="h-3.5 w-3.5" />
@@ -1263,140 +839,345 @@ function JobsConsoleContent() {
                                     <ArrowUp className="h-3.5 w-3.5" />
                                 )}
                             </Button>
+
+                            {/* View Mode Toggle: Compact vs Detailed */}
+                            <div className="flex items-center rounded-lg border border-surface-300/50 bg-surface-400/40 p-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('compact')}
+                                    className={cn(
+                                        'rounded-md p-1.5 transition-colors',
+                                        viewMode === 'compact'
+                                            ? 'bg-surface-300/80 text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    )}
+                                    title="Compact Table View"
+                                >
+                                    <LayoutList className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setViewMode('detailed')}
+                                    className={cn(
+                                        'rounded-md p-1.5 transition-colors',
+                                        viewMode === 'detailed'
+                                            ? 'bg-surface-300/80 text-foreground shadow-xs'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    )}
+                                    title="Detailed Card View"
+                                >
+                                    <LayoutGrid className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Active Filter Summary & Reset */}
-                    {hasActiveFilters && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-surface-300/50 text-xs">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-muted-foreground mr-1">Active filters:</span>
-                                {activeFilterChips.map((chip) => (
-                                    <Badge
-                                        key={chip.key}
-                                        variant="secondary"
-                                        className="gap-1 pl-2.5 pr-1.5 py-0.5 font-normal bg-surface-300/80 text-foreground"
+                    {/* Row 2: Phase Tabs Strip */}
+                    <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pt-1">
+                        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+                            {phaseTabs.map((tab) => {
+                                const isSelected = urlPhase === tab.id && !urlStatus
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        aria-pressed={isSelected}
+                                        onClick={() =>
+                                            updateUrlParams({
+                                                phase: tab.id,
+                                                status: null,
+                                                page: 1,
+                                            })
+                                        }
+                                        className={cn(
+                                            'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all shrink-0',
+                                            isSelected
+                                                ? 'bg-primary text-white shadow-xs'
+                                                : 'bg-surface-400/50 text-muted-foreground hover:text-foreground hover:bg-surface-300/60'
+                                        )}
                                     >
-                                        <span>{chip.label}</span>
-                                        <button
-                                            type="button"
-                                            onClick={chip.onRemove}
-                                            className="rounded-full p-0.5 hover:bg-surface-200"
-                                            aria-label={`Remove ${chip.label} filter`}
+                                        <span>{tab.label}</span>
+                                        <span
+                                            className={cn(
+                                                'rounded-full px-1.5 py-0.2 font-mono text-[10px] tabular-nums',
+                                                isSelected
+                                                    ? 'bg-black/25 text-white'
+                                                    : 'bg-surface-300/70 text-muted-foreground'
+                                            )}
                                         >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
+                                            {tab.count}
+                                        </span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Total Count Footnote */}
+                        <span className="hidden sm:inline-block font-mono text-xs text-muted-foreground/70 shrink-0 tabular-nums">
+                            {totalCount > 0 ? `${startItem}–${endItem} of ${totalCount}` : '0 transfers'}
+                        </span>
+                    </div>
+
+                    {/* Expandable Facets Panel (Destination, Category, Size, Traits) */}
+                    {showFiltersPanel && (
+                        <div className="pt-2 border-t border-surface-300/30 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 animate-in">
+                            {/* Destination Dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs border-surface-300/50 bg-surface-400/30">
+                                        <span className="truncate">{selectedDestinationLabel}</span>
+                                        <ChevronDown className="h-3 w-3 opacity-60" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-60">
+                                    <DropdownMenuLabel>Storage Destination</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                        onClick={() => updateUrlParams({ provider: null, storageProfileId: null, page: 1 })}
+                                    >
+                                        All Destinations
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => updateUrlParams({ provider: 'GoogleDrive', storageProfileId: null, page: 1 })}>
+                                        <Cloud className="mr-2 h-3.5 w-3.5 text-primary-200" />
+                                        Google Drive
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => updateUrlParams({ provider: 'S3', storageProfileId: null, page: 1 })}>
+                                        <Database className="mr-2 h-3.5 w-3.5 text-warning-medium" />
+                                        S3 Compatible
+                                    </DropdownMenuItem>
+                                    {destinationProfiles.length > 0 && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            {destinationProfiles.map((p) => (
+                                                <DropdownMenuItem
+                                                    key={p.id}
+                                                    onClick={() => updateUrlParams({ storageProfileId: p.id, provider: null, page: 1 })}
+                                                >
+                                                    <span className="truncate">{p.name}</span>
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* Category Dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs border-surface-300/50 bg-surface-400/30">
+                                        <span>
+                                            {CATEGORY_OPTIONS.find((c) => c.value === (urlCategory || ''))?.label || 'All Categories'}
+                                        </span>
+                                        <ChevronDown className="h-3 w-3 opacity-60" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-48">
+                                    <DropdownMenuLabel>Category</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {CATEGORY_OPTIONS.map((cat) => (
+                                        <DropdownMenuItem
+                                            key={cat.value || 'all'}
+                                            onClick={() => updateUrlParams({ category: cat.value || null, page: 1 })}
+                                        >
+                                            {cat.label}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* Size Bucket */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full justify-between h-8 text-xs border-surface-300/50 bg-surface-400/30">
+                                        <span>
+                                            {SIZE_BUCKET_OPTIONS.find((s) => s.value === (urlSizeBucket || ''))?.label || 'Any Size'}
+                                        </span>
+                                        <ChevronDown className="h-3 w-3 opacity-60" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-48">
+                                    <DropdownMenuLabel>Size Bucket</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {SIZE_BUCKET_OPTIONS.map((sb) => (
+                                        <DropdownMenuItem
+                                            key={sb.value || 'any'}
+                                            onClick={() => updateUrlParams({ sizeBucket: sb.value || null, page: 1 })}
+                                        >
+                                            {sb.label}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* Trait Toggles Group */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
                                     type="button"
-                                    onClick={clearAllFilters}
-                                    className="text-xs font-medium text-primary-100 hover:underline ml-1"
+                                    onClick={() => updateUrlParams({ isPinned: urlIsPinned ? null : true, page: 1 })}
+                                    className={cn(
+                                        'rounded px-2 py-1 text-xs transition-colors border',
+                                        urlIsPinned
+                                            ? 'border-primary/60 bg-primary/20 text-primary-100 font-semibold'
+                                            : 'border-surface-300/50 bg-surface-400/30 text-muted-foreground hover:text-foreground'
+                                    )}
                                 >
-                                    Clear all filters
+                                    Pinned
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updateUrlParams({ wasRerouted: urlWasRerouted ? null : true, page: 1 })}
+                                    className={cn(
+                                        'rounded px-2 py-1 text-xs transition-colors border',
+                                        urlWasRerouted
+                                            ? 'border-warning/60 bg-warning/20 text-warning-light font-semibold'
+                                            : 'border-surface-300/50 bg-surface-400/30 text-muted-foreground hover:text-foreground'
+                                    )}
+                                >
+                                    Rerouted
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updateUrlParams({ isStalled: urlIsStalled ? null : true, page: 1 })}
+                                    className={cn(
+                                        'rounded px-2 py-1 text-xs transition-colors border',
+                                        urlIsStalled
+                                            ? 'border-warning/60 bg-warning/20 text-warning-light font-semibold'
+                                            : 'border-surface-300/50 bg-surface-400/30 text-muted-foreground hover:text-foreground'
+                                    )}
+                                >
+                                    Stalled
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => updateUrlParams({ hasError: urlHasError ? null : true, page: 1 })}
+                                    className={cn(
+                                        'rounded px-2 py-1 text-xs transition-colors border',
+                                        urlHasError
+                                            ? 'border-danger/60 bg-danger/20 text-danger-light font-semibold'
+                                            : 'border-surface-300/50 bg-surface-400/30 text-muted-foreground hover:text-foreground'
+                                    )}
+                                >
+                                    Has Error
                                 </button>
                             </div>
+                        </div>
+                    )}
 
-                            <span className="font-mono text-muted-foreground">
-                                {totalCount > 0
-                                    ? `Showing ${startItem}–${endItem} of ${totalCount} matching jobs`
-                                    : '0 matching jobs'}
-                            </span>
+                    {/* Active Filter Chips Strip */}
+                    {hasActiveFilters && (
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-surface-300/30">
+                            <span className="text-xs text-muted-foreground">Active:</span>
+                            {activeFilterChips.map((chip) => (
+                                <Badge
+                                    key={chip.key}
+                                    variant="secondary"
+                                    className="gap-1 pr-1 font-normal text-xs bg-surface-400/60 border-surface-300/50 hover:bg-surface-300/60"
+                                >
+                                    <span>{chip.label}</span>
+                                    <button
+                                        type="button"
+                                        onClick={chip.onRemove}
+                                        className="rounded-full p-0.5 hover:bg-surface-200/50 text-muted-foreground hover:text-foreground"
+                                        aria-label={`Remove filter ${chip.label}`}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={clearAllFilters}
+                                className="text-xs text-primary hover:text-primary-100 hover:underline ml-1"
+                            >
+                                Clear all
+                            </button>
                         </div>
                     )}
                 </CardContent>
             </Card>
 
-            {/* 5. Batch Action Bar & Page Selection Toolbar */}
-            {items.length > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-surface-300/60 bg-surface-400/40 px-4 py-2.5 text-xs">
-                    <label className="inline-flex items-center gap-2.5 cursor-pointer select-none text-muted-foreground hover:text-foreground">
+            {/* 3. Contextual / Floating Batch Selection Bar */}
+            {selectedJobIds.length > 0 && (
+                <div className="sticky top-2 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/40 bg-surface-500/95 backdrop-blur-md px-4 py-2.5 shadow-lg text-xs animate-in">
+                    <label className="inline-flex items-center gap-2 cursor-pointer select-none font-medium text-foreground">
                         <input
                             type="checkbox"
                             checked={allOnPageSelected}
                             onChange={(e) => handleToggleSelectAllOnPage(e.target.checked)}
-                            className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-primary"
+                            className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/40 cursor-pointer accent-primary"
                         />
                         <span>
-                            {selectedJobIds.length > 0
-                                ? `${selectedJobIds.length} job${selectedJobIds.length === 1 ? '' : 's'} selected`
-                                : `Select all ${items.length} on page`}
+                            {selectedJobIds.length} transfer{selectedJobIds.length === 1 ? '' : 's'} selected
                         </span>
                     </label>
 
-                    {selectedJobIds.length > 0 ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={retryFailedBatchMutation.isPending}
-                                onClick={() => {
-                                    retryFailedBatchMutation.mutate(
-                                        { jobIds: selectedJobIds },
-                                        { onSuccess: () => setSelectedJobIds([]) }
-                                    )
-                                }}
-                                className="h-7 text-xs border-primary/40 text-primary-100 hover:bg-primary/20"
-                            >
-                                {retryFailedBatchMutation.isPending ? (
-                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                                )}
-                                Retry Selected ({selectedJobIds.length})
-                            </Button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={retryFailedBatchMutation.isPending}
+                            onClick={() => {
+                                retryFailedBatchMutation.mutate(
+                                    { jobIds: selectedJobIds },
+                                    { onSuccess: () => setSelectedJobIds([]) }
+                                )
+                            }}
+                            className="h-7 text-xs border-primary/40 text-primary-100 hover:bg-primary/20"
+                        >
+                            {retryFailedBatchMutation.isPending ? (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                            )}
+                            Retry ({selectedJobIds.length})
+                        </Button>
 
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={cancelBatchMutation.isPending}
-                                onClick={() => {
-                                    cancelBatchMutation.mutate(
-                                        { jobIds: selectedJobIds },
-                                        { onSuccess: () => setSelectedJobIds([]) }
-                                    )
-                                }}
-                                className="h-7 text-xs border-danger/40 text-danger-light hover:bg-danger/20"
-                            >
-                                {cancelBatchMutation.isPending ? (
-                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                                ) : (
-                                    <Ban className="mr-1.5 h-3.5 w-3.5" />
-                                )}
-                                Cancel Selected ({selectedJobIds.length})
-                            </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={cancelBatchMutation.isPending}
+                            onClick={() => {
+                                cancelBatchMutation.mutate(
+                                    { jobIds: selectedJobIds },
+                                    { onSuccess: () => setSelectedJobIds([]) }
+                                )
+                            }}
+                            className="h-7 text-xs border-danger/40 text-danger-light hover:bg-danger/20"
+                        >
+                            {cancelBatchMutation.isPending ? (
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                                <Ban className="mr-1.5 h-3.5 w-3.5" />
+                            )}
+                            Cancel ({selectedJobIds.length})
+                        </Button>
 
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setSelectedJobIds([])}
-                                className="h-7 text-xs text-muted-foreground"
-                            >
-                                Clear Selection
-                            </Button>
-                        </div>
-                    ) : (
-                        <span className="font-mono text-muted-foreground">
-                            Showing {startItem}–{endItem} of {totalCount}
-                        </span>
-                    )}
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setSelectedJobIds([])}
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            Deselect
+                        </Button>
+                    </div>
                 </div>
             )}
 
-            {/* Main Jobs List */}
+            {/* 4. Main Transfer Jobs List / Table */}
             {isLoading ? (
-                <div className="flex items-center justify-center min-h-[320px]">
+                <div className="flex items-center justify-center min-h-[280px]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : error ? (
-                <Card className="border-danger/50">
+                <Card className="border-danger/40 bg-surface-500/70">
                     <CardContent className="p-6 text-center">
-                        <AlertCircle className="h-12 w-12 text-danger mx-auto mb-4" />
+                        <AlertCircle className="h-10 w-10 text-danger mx-auto mb-3" />
                         <p className="text-danger mb-4">
-                            {error instanceof Error ? error.message : 'Failed to load jobs'}
+                            {error instanceof Error ? error.message : 'Failed to load transfer jobs'}
                         </p>
                         <Button onClick={() => refetch()} variant="outline" size="sm">
                             <RefreshCw className="mr-2 h-4 w-4" />
@@ -1414,7 +1195,7 @@ function JobsConsoleContent() {
                     }
                     description={
                         hasActiveFilters
-                            ? 'Try removing one or more filters or clearing your search query.'
+                            ? 'Try clearing one or more filters or search terms.'
                             : 'Upload a .torrent file to stage it and stream directly to Google Drive or S3.'
                     }
                     action={
@@ -1426,8 +1207,37 @@ function JobsConsoleContent() {
                               }
                     }
                 />
+            ) : viewMode === 'compact' ? (
+                /* Compact Table View (Default) */
+                <div className="space-y-1.5">
+                    {items.map((job) => (
+                        <CompactJobTableRow
+                            key={job.id}
+                            job={job}
+                            selectable
+                            selected={selectedJobIds.includes(job.id)}
+                            onSelectChange={(checked) => handleToggleSelectJob(job.id, checked)}
+                            onRetry={(jobId) => retryJobMutation.mutate({ jobId })}
+                            onForceStart={(jobId) => forceStartMutation.mutate(jobId)}
+                            onCancel={(jobId) => cancelJobMutation.mutate(jobId)}
+                            isRetrying={
+                                retryJobMutation.isPending &&
+                                retryJobMutation.variables?.jobId === job.id
+                            }
+                            isForceStarting={
+                                forceStartMutation.isPending &&
+                                forceStartMutation.variables === job.id
+                            }
+                            isCancelling={
+                                cancelJobMutation.isPending &&
+                                cancelJobMutation.variables === job.id
+                            }
+                        />
+                    ))}
+                </div>
             ) : (
-                <div className="space-y-3">
+                /* Detailed Card View */
+                <div className="space-y-2.5">
                     {items.map((job) => (
                         <JobCard
                             key={job.id}
@@ -1455,7 +1265,7 @@ function JobsConsoleContent() {
                 </div>
             )}
 
-            {/* Pagination */}
+            {/* 5. Pagination */}
             {data && data.totalCount > 0 && (
                 <Pagination
                     totalItems={data.totalCount}
