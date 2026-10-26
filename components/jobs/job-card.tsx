@@ -20,6 +20,7 @@ import { getJobPhaseProgress } from '@/lib/utils/job-progress'
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { JobStatus, StorageRouteReason } from '@/types/enums'
 import type { Job, JobCardProps, JobListProps } from '@/types/jobs'
+import { UnifiedProgressPipeline } from './UnifiedProgressPipeline'
 import {
     Clock,
     Download,
@@ -72,100 +73,100 @@ const statusConfig: Record<
     }
 > = {
     [JobStatus.QUEUED]: {
-        icon: <Clock className="h-5 w-5" />,
+        icon: <Clock className="h-4 w-4" />,
         badgeVariant: 'pending',
         label: 'Queued',
         color: 'text-warning-medium',
-        bgColor: 'bg-warning/15',
+        bgColor: 'bg-warning/10',
         accentBar: 'bg-warning',
     },
     [JobStatus.DOWNLOADING]: {
-        icon: <Download className="h-5 w-5" />,
+        icon: <Download className="h-4 w-4" />,
         badgeVariant: 'processing',
         label: 'Downloading',
-        color: 'text-primary-200',
-        bgColor: 'bg-primary/20',
+        color: 'text-primary-100',
+        bgColor: 'bg-primary/10',
         accentBar: 'bg-primary',
     },
     [JobStatus.PENDING_UPLOAD]: {
-        icon: <Clock className="h-5 w-5" />,
+        icon: <Clock className="h-4 w-4" />,
         badgeVariant: 'pending',
         label: 'Pending Upload',
         color: 'text-warning-medium',
-        bgColor: 'bg-warning/15',
+        bgColor: 'bg-warning/10',
         accentBar: 'bg-warning',
     },
     [JobStatus.UPLOADING]: {
-        icon: <Upload className="h-5 w-5" />,
+        icon: <Upload className="h-4 w-4" />,
         badgeVariant: 'info',
         label: 'Uploading',
         color: 'text-info-light',
-        bgColor: 'bg-info/20',
+        bgColor: 'bg-info/10',
         accentBar: 'bg-info-medium',
     },
     [JobStatus.TORRENT_DOWNLOAD_RETRY]: {
-        icon: <RefreshCw className="h-5 w-5 animate-spin" />,
+        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
         badgeVariant: 'warning',
         label: 'Retrying Download',
         color: 'text-warning-medium',
-        bgColor: 'bg-warning/20',
+        bgColor: 'bg-warning/10',
         accentBar: 'bg-warning',
     },
     [JobStatus.UPLOAD_RETRY]: {
-        icon: <RefreshCw className="h-5 w-5 animate-spin" />,
+        icon: <RefreshCw className="h-4 w-4 animate-spin" />,
         badgeVariant: 'warning',
         label: 'Retrying Upload',
         color: 'text-warning-medium',
-        bgColor: 'bg-warning/20',
+        bgColor: 'bg-warning/10',
         accentBar: 'bg-warning',
     },
     [JobStatus.COMPLETED]: {
-        icon: <CheckCircle className="h-5 w-5" />,
+        icon: <CheckCircle className="h-4 w-4" />,
         badgeVariant: 'success',
         label: 'Completed',
         color: 'text-success-medium',
-        bgColor: 'bg-success/15',
+        bgColor: 'bg-success/10',
         accentBar: 'bg-success',
     },
     [JobStatus.FAILED]: {
-        icon: <XCircle className="h-5 w-5" />,
+        icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Failed',
-        color: 'text-danger-medium',
-        bgColor: 'bg-danger/15',
+        color: 'text-danger-light',
+        bgColor: 'bg-danger/10',
         accentBar: 'bg-danger',
     },
     [JobStatus.TORRENT_FAILED]: {
-        icon: <XCircle className="h-5 w-5" />,
+        icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Download Failed',
-        color: 'text-danger-medium',
-        bgColor: 'bg-danger/15',
+        color: 'text-danger-light',
+        bgColor: 'bg-danger/10',
         accentBar: 'bg-danger',
     },
     [JobStatus.UPLOAD_FAILED]: {
-        icon: <XCircle className="h-5 w-5" />,
+        icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Upload Failed',
-        color: 'text-danger-medium',
-        bgColor: 'bg-danger/15',
+        color: 'text-danger-light',
+        bgColor: 'bg-danger/10',
         accentBar: 'bg-danger',
     },
     [JobStatus.GOOGLE_DRIVE_FAILED]: {
-        icon: <AlertCircle className="h-5 w-5" />,
+        icon: <AlertCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Drive Upload Failed',
-        color: 'text-danger-medium',
-        bgColor: 'bg-danger/15',
+        color: 'text-danger-light',
+        bgColor: 'bg-danger/10',
         accentBar: 'bg-danger',
     },
     [JobStatus.CANCELLED]: {
-        icon: <Ban className="h-5 w-5" />,
+        icon: <Ban className="h-4 w-4" />,
         badgeVariant: 'secondary',
         label: 'Cancelled',
-        color: 'text-surface-50',
-        bgColor: 'bg-surface-300/60',
-        accentBar: 'bg-surface-200',
+        color: 'text-surface-100',
+        bgColor: 'bg-surface-400/40',
+        accentBar: 'bg-surface-300',
     },
 }
 
@@ -194,17 +195,17 @@ function inferMediaCategory(job: Job): string {
 function getCategoryMeta(category: string): { icon: React.ReactNode; label: string } {
     switch (category) {
         case 'video':
-            return { icon: <Film className="h-3.5 w-3.5 text-primary-200" />, label: 'Video' }
+            return { icon: <Film className="h-3 w-3 text-primary-200" />, label: 'Video' }
         case 'audio':
-            return { icon: <Music className="h-3.5 w-3.5 text-info-light" />, label: 'Audio' }
+            return { icon: <Music className="h-3 w-3 text-info-light" />, label: 'Audio' }
         case 'archive':
-            return { icon: <Archive className="h-3.5 w-3.5 text-warning-medium" />, label: 'Archive' }
+            return { icon: <Archive className="h-3 w-3 text-warning-medium" />, label: 'Archive' }
         case 'document':
-            return { icon: <FileText className="h-3.5 w-3.5 text-success-medium" />, label: 'Document' }
+            return { icon: <FileText className="h-3 w-3 text-success-medium" />, label: 'Document' }
         case 'software':
-            return { icon: <Package className="h-3.5 w-3.5 text-primary-100" />, label: 'Software' }
+            return { icon: <Package className="h-3 w-3 text-primary-100" />, label: 'Software' }
         default:
-            return { icon: <File className="h-3.5 w-3.5 text-muted-foreground" />, label: 'Torrent' }
+            return { icon: <File className="h-3 w-3 text-muted-foreground" />, label: 'Torrent' }
     }
 }
 
@@ -254,8 +255,6 @@ export function JobCard({
         isUploadingPhase,
         isCompleted,
         isFailed,
-        isDownloadFailed,
-        isUploadFailed,
         isActive,
         downloadPct,
         uploadPct,
@@ -318,27 +317,27 @@ export function JobCard({
         <TooltipProvider delayDuration={200}>
             <div
                 className={cn(
-                    'group relative rounded-xl border border-surface-300/60 bg-surface-500/80 transition-colors duration-150',
-                    'hover:border-surface-200/80 hover:bg-surface-400/40',
-                    isActive && 'border-primary/35 bg-surface-tonal-500/60',
-                    selected && 'ring-2 ring-primary border-primary/60 bg-primary/10',
+                    'group relative rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs transition-[background-color,border-color] duration-150',
+                    'hover:border-surface-200/70 hover:bg-surface-400/35',
+                    isActive && 'border-primary/30 bg-surface-tonal-500/40',
+                    selected && 'ring-1 ring-primary border-primary/60 bg-primary/[0.04]',
                     className
                 )}
             >
-                {/* Crisp 1px left status hairline */}
+                {/* 1px Left hairline indicator */}
                 <div
                     className={cn(
-                        'absolute left-0 top-3 bottom-3 w-px transition-colors duration-200',
+                        'absolute left-0 top-3 bottom-3 w-0.5 rounded-r transition-colors duration-200',
                         config.accentBar
                     )}
                 />
 
-                <div className="p-4 sm:p-5">
-                    <div className="flex items-start gap-3 sm:gap-4">
+                <div className="p-4 sm:p-4.5">
+                    <div className="flex items-start gap-3 sm:gap-3.5">
                         {/* Optional Batch Selection Checkbox */}
                         {selectable && (
                             <div
-                                className="pt-2.5 shrink-0"
+                                className="pt-2 shrink-0"
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <input
@@ -346,7 +345,7 @@ export function JobCard({
                                     aria-label={`Select job ${displayTitle}`}
                                     checked={selected}
                                     onChange={(e) => onSelectChange?.(e.target.checked)}
-                                    className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/50 cursor-pointer accent-primary"
+                                    className="h-4 w-4 rounded border-surface-200 bg-surface-400 text-primary focus:ring-2 focus:ring-primary/40 cursor-pointer accent-primary"
                                 />
                             </div>
                         )}
@@ -355,7 +354,7 @@ export function JobCard({
                         <Link
                             href={`/jobs/${job.id}`}
                             className={cn(
-                                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors duration-150',
+                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-300/40 transition-colors duration-150',
                                 config.bgColor,
                                 config.color
                             )}
@@ -365,26 +364,26 @@ export function JobCard({
                         </Link>
 
                         {/* Main Content */}
-                        <div className="flex-1 min-w-0 space-y-3">
+                        <div className="flex-1 min-w-0 space-y-2.5">
                             {/* Top Row: Title + Metadata Chips + Status/Actions */}
-                            <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
                                         <Link
                                             href={`/jobs/${job.id}`}
-                                            className="font-semibold text-base text-foreground hover:text-primary transition-colors truncate block"
+                                            className="font-semibold text-sm sm:text-base text-foreground hover:text-primary transition-colors truncate block"
                                         >
                                             {displayTitle}
                                         </Link>
-                                        <span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0">
+                                        <span className="text-xs font-mono tabular-nums text-muted-foreground/70 shrink-0">
                                             #{job.id}
                                         </span>
                                     </div>
 
                                     {/* Metadata & Routing Chip Strip */}
-                                    <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                                    <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground flex-wrap">
                                         {/* Category & Total Size */}
-                                        <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-400/80 px-2 py-0.5 font-medium text-foreground/90">
+                                        <span className="inline-flex items-center gap-1 rounded bg-surface-400/60 px-1.5 py-0.5 text-[11px] font-medium text-foreground/80">
                                             {categoryMeta.icon}
                                             <span>{categoryMeta.label}</span>
                                             <span className="text-surface-100">·</span>
@@ -397,10 +396,10 @@ export function JobCard({
                                         {(totalFiles > 0 || isSelective) && (
                                             <span
                                                 className={cn(
-                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono tabular-nums',
+                                                    'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums',
                                                     isSelective
-                                                        ? 'bg-info/15 text-info-light border border-info/30'
-                                                        : 'bg-surface-400/60 text-muted-foreground'
+                                                        ? 'bg-info/10 text-info-light border border-info/25'
+                                                        : 'bg-surface-400/40 text-muted-foreground'
                                                 )}
                                                 title={
                                                     isSelective
@@ -416,17 +415,17 @@ export function JobCard({
                                         )}
 
                                         {/* Storage Provider + Profile Badge */}
-                                        <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-tonal-400/90 border border-surface-300/60 px-2 py-0.5 text-foreground/90">
+                                        <span className="inline-flex items-center gap-1 rounded bg-surface-400/40 border border-surface-300/40 px-1.5 py-0.5 text-[11px] text-foreground/80">
                                             {isS3 ? (
                                                 <Database className="h-3 w-3 text-warning-medium shrink-0" />
                                             ) : (
                                                 <Cloud className="h-3 w-3 text-primary-200 shrink-0" />
                                             )}
-                                            <span className="text-[11px] font-medium text-muted-foreground">
+                                            <span className="text-muted-foreground">
                                                 {isS3 ? 'S3' : 'Drive'}:
                                             </span>
-                                            <span className="font-medium truncate max-w-[160px]">
-                                                {job.storageProfileName || 'Default Drive'}
+                                            <span className="font-medium truncate max-w-[140px]">
+                                                {job.storageProfileName || 'Default'}
                                             </span>
                                         </span>
 
@@ -434,13 +433,13 @@ export function JobCard({
                                         {job.allowStorageFailover === false && (
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary-100">
-                                                        <Pin className="h-3 w-3" />
+                                                    <span className="inline-flex items-center gap-0.5 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary-100">
+                                                        <Pin className="h-2.5 w-2.5" />
                                                         Pinned
                                                     </span>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
-                                                    Pinned to {job.storageProfileName || 'this drive'} — automatic failover is disabled.
+                                                    Pinned to {job.storageProfileName || 'this drive'} — automatic failover disabled.
                                                 </TooltipContent>
                                             </Tooltip>
                                         )}
@@ -449,8 +448,8 @@ export function JobCard({
                                         {job.wasRerouted && (
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <span className="inline-flex items-center gap-1 rounded-md border border-warning/40 bg-warning/15 px-2 py-0.5 text-[11px] font-semibold text-warning-light">
-                                                        <Shuffle className="h-3 w-3" />
+                                                    <span className="inline-flex items-center gap-0.5 rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning-light">
+                                                        <Shuffle className="h-2.5 w-2.5" />
                                                         <span>
                                                             {job.originalStorageProfileName
                                                                 ? `${job.originalStorageProfileName} → ${job.storageProfileName}`
@@ -468,8 +467,8 @@ export function JobCard({
 
                                         {/* Stalled Warning Badge */}
                                         {job.isStalled && (
-                                            <span className="inline-flex items-center gap-1 rounded-md border border-warning/50 bg-warning/20 px-2 py-0.5 text-[11px] font-semibold text-warning-light">
-                                                <AlertTriangle className="h-3 w-3" />
+                                            <span className="inline-flex items-center gap-0.5 rounded border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning-light">
+                                                <AlertTriangle className="h-2.5 w-2.5" />
                                                 Stalled
                                             </span>
                                         )}
@@ -480,10 +479,10 @@ export function JobCard({
                                                 type="button"
                                                 onClick={handleCopyHash}
                                                 className={cn(
-                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[11px] select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
+                                                    'inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] select-none transition-all duration-150',
                                                     copiedHash
                                                         ? 'bg-success/15 text-success-medium'
-                                                        : 'bg-surface-400/60 hover:bg-surface-300/80 text-muted-foreground hover:text-foreground'
+                                                        : 'bg-surface-400/40 hover:bg-surface-300/70 text-muted-foreground hover:text-foreground'
                                                 )}
                                                 title={`Copy InfoHash: ${job.infoHash}`}
                                             >
@@ -493,15 +492,15 @@ export function JobCard({
                                                         : `${job.infoHash.slice(0, 8)}…`}
                                                 </span>
                                                 {copiedHash ? (
-                                                    <Check className="h-3 w-3 text-success-medium" />
+                                                    <Check className="h-2.5 w-2.5 text-success-medium" />
                                                 ) : (
-                                                    <Copy className="h-3 w-3 opacity-70" />
+                                                    <Copy className="h-2.5 w-2.5 opacity-60" />
                                                 )}
                                             </button>
                                         )}
 
                                         {/* Relative Timestamp */}
-                                        <span className="text-muted-foreground/80 tabular-nums">
+                                        <span className="text-muted-foreground/60 tabular-nums">
                                             {formatRelativeTime(
                                                 job.createdAt ||
                                                     job.startedAt ||
@@ -512,10 +511,10 @@ export function JobCard({
                                 </div>
 
                                 {/* Right Side: Status Badge + Inline Quick Actions */}
-                                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                                <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
                                     <Badge
                                         variant={config.badgeVariant}
-                                        className="transition-colors duration-200"
+                                        className="transition-colors duration-150 text-[11px] h-6 px-2"
                                     >
                                         {config.label}
                                     </Badge>
@@ -524,22 +523,22 @@ export function JobCard({
                                         <Button
                                             type="button"
                                             size="sm"
-                                            variant="outline"
+                                            variant="ghost"
                                             disabled={isForceStarting}
                                             onClick={(e) => {
                                                 e.preventDefault()
                                                 e.stopPropagation()
                                                 onForceStart(job.id)
                                             }}
-                                            className="h-7 px-2.5 text-xs border-primary/40 text-primary-100 hover:bg-primary/20"
-                                            title="Re-dispatch job immediately to a worker"
+                                            className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
+                                            title="Force start job"
                                         >
                                             {isForceStarting ? (
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                <Loader2 className="h-3 w-3 animate-spin" />
                                             ) : (
                                                 <>
                                                     <Play className="mr-1 h-3 w-3" />
-                                                    Force Start
+                                                    Force
                                                 </>
                                             )}
                                         </Button>
@@ -549,17 +548,17 @@ export function JobCard({
                                         <Button
                                             type="button"
                                             size="sm"
-                                            variant="outline"
+                                            variant="ghost"
                                             disabled={isRetrying}
                                             onClick={(e) => {
                                                 e.preventDefault()
                                                 e.stopPropagation()
                                                 onRetry(job.id)
                                             }}
-                                            className="h-7 px-2.5 text-xs border-primary/40 text-primary-100 hover:bg-primary/20"
+                                            className="h-6 px-2 text-xs text-primary hover:bg-primary/10"
                                         >
                                             {isRetrying ? (
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                <Loader2 className="h-3 w-3 animate-spin" />
                                             ) : (
                                                 <>
                                                     <RefreshCw className="mr-1 h-3 w-3" />
@@ -580,10 +579,10 @@ export function JobCard({
                                                 e.stopPropagation()
                                                 onCancel(job.id)
                                             }}
-                                            className="h-7 px-2 text-xs text-muted-foreground hover:text-danger-light hover:bg-danger/15"
+                                            className="h-6 px-1.5 text-xs text-muted-foreground hover:text-danger hover:bg-danger/10"
                                         >
                                             {isCancelling ? (
-                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                <Loader2 className="h-3 w-3 animate-spin" />
                                             ) : (
                                                 'Cancel'
                                             )}
@@ -592,180 +591,55 @@ export function JobCard({
 
                                     <Link
                                         href={`/jobs/${job.id}`}
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-surface-300/50 transition-colors active:scale-[0.97]"
+                                        className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors"
                                         aria-label={`Open Job #${job.id} details`}
                                     >
-                                        <ChevronRight className="h-4 w-4" />
+                                        <ChevronRight className="h-3.5 w-3.5" />
                                     </Link>
                                 </div>
                             </div>
 
-                            {/* Dual-Stage Progress Pipeline */}
+                            {/* Unified Dual-Stage Progress Pipeline */}
                             {showPipeline && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                                    {/* Download Phase: BitTorrent Download */}
-                                    <div
-                                        className={cn(
-                                            'rounded-lg border px-3 py-2 transition-colors duration-200',
-                                            isDownloadingPhase
-                                                ? 'border-primary/40 bg-primary/10'
-                                                : isDownloadFailed
-                                                  ? 'border-danger/40 bg-danger/10'
-                                                  : 'border-surface-300/60 bg-surface-400/40'
-                                        )}
-                                    >
-                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                            <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90">
-                                                <Download className="h-3.5 w-3.5 text-primary-200" />
-                                                <span>Download Phase · BitTorrent</span>
-                                            </span>
-                                            <div className="flex items-center gap-2 font-mono tabular-nums">
-                                                {downloadSpeed && (
-                                                    <span className="inline-flex items-center gap-0.5 text-primary-100 font-semibold">
-                                                        <ArrowDown className="h-3 w-3" />
-                                                        {downloadSpeed}
-                                                    </span>
-                                                )}
-                                                <span
-                                                    className={cn(
-                                                        'font-semibold',
-                                                        downloadPct >= 100
-                                                            ? 'text-success-medium'
-                                                            : isDownloadFailed
-                                                              ? 'text-danger-medium'
-                                                              : 'text-primary-100'
-                                                    )}
-                                                >
-                                                    {downloadPct.toFixed(1)}%
+                                <div className="space-y-1 pt-0.5">
+                                    <UnifiedProgressPipeline job={job} size="sm" showSummary />
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground font-mono tabular-nums">
+                                        <span className="flex items-center gap-2">
+                                            <span>{formatFileSize(effectiveBytesDownloaded)} DL</span>
+                                            <span>·</span>
+                                            <span>{formatFileSize(effectiveBytesUploaded)} UL</span>
+                                            <span>·</span>
+                                            <span>Total: {formatFileSize(job.totalBytes)}</span>
+                                        </span>
+                                        <span className="flex items-center gap-2">
+                                            {downloadSpeed && (
+                                                <span className="text-primary-100 font-medium inline-flex items-center gap-0.5">
+                                                    <ArrowDown className="h-3 w-3" />
+                                                    {downloadSpeed}
                                                 </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
-                                            <div
-                                                className={cn(
-                                                    'h-full w-full rounded-full transition-[transform,background-color] duration-500 ease-out-quint',
-                                                    downloadPct >= 100
-                                                        ? 'bg-success'
-                                                        : isDownloadFailed
-                                                          ? 'bg-danger'
-                                                          : 'bg-primary'
-                                                )}
-                                                style={{ transform: `translateX(-${100 - downloadPct}%)` }}
-                                            />
-                                        </div>
-
-                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
-                                            <span>
-                                                {formatFileSize(effectiveBytesDownloaded)} /{' '}
-                                                {formatFileSize(job.totalBytes)}
-                                            </span>
-                                            <span>
-                                                {downloadEta
-                                                    ? downloadEta
-                                                    : downloadPct >= 100
-                                                      ? 'Staged'
-                                                      : isDownloadFailed
-                                                        ? 'Failed'
-                                                        : status === JobStatus.QUEUED
-                                                          ? 'Queued'
-                                                          : ''}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Upload Phase: Cloud Upload */}
-                                    <div
-                                        className={cn(
-                                            'rounded-lg border px-3 py-2 transition-colors duration-200',
-                                            isUploadingPhase
-                                                ? 'border-info/50 bg-info/10'
-                                                : isUploadFailed
-                                                  ? 'border-danger/40 bg-danger/10'
-                                                  : isCompleted
-                                                    ? 'border-success/30 bg-success/5'
-                                                    : 'border-surface-300/60 bg-surface-400/40'
-                                        )}
-                                    >
-                                        <div className="flex items-center justify-between text-xs mb-1.5">
-                                            <span className="inline-flex items-center gap-1.5 font-medium text-foreground/90 truncate">
-                                                <Upload className="h-3.5 w-3.5 text-info-light shrink-0" />
-                                                <span className="truncate">
-                                                    Upload Phase · {job.storageProfileName || 'Cloud Upload'}
+                                            )}
+                                            {uploadSpeed && (
+                                                <span className="text-info-light font-medium inline-flex items-center gap-0.5">
+                                                    <ArrowUp className="h-3 w-3" />
+                                                    {uploadSpeed}
                                                 </span>
-                                            </span>
-                                            <div className="flex items-center gap-2 font-mono tabular-nums shrink-0">
-                                                {uploadSpeed && (
-                                                    <span className="inline-flex items-center gap-0.5 text-info-light font-semibold">
-                                                        <ArrowUp className="h-3 w-3" />
-                                                        {uploadSpeed}
-                                                    </span>
-                                                )}
-                                                <span
-                                                    className={cn(
-                                                        'font-semibold',
-                                                        uploadPct >= 100
-                                                            ? 'text-success-medium'
-                                                            : isUploadFailed
-                                                              ? 'text-danger-medium'
-                                                              : isUploadingPhase
-                                                                ? 'text-info-light'
-                                                                : 'text-muted-foreground'
-                                                    )}
-                                                >
-                                                    {uploadPct.toFixed(1)}%
+                                            )}
+                                            {(downloadEta || uploadEta) && (
+                                                <span className="text-muted-foreground/80">
+                                                    ({downloadEta || uploadEta})
                                                 </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
-                                            <div
-                                                className={cn(
-                                                    'h-full w-full rounded-full transition-[transform,background-color] duration-500 ease-out-quint',
-                                                    uploadPct >= 100
-                                                        ? 'bg-success'
-                                                        : isUploadFailed
-                                                          ? 'bg-danger'
-                                                          : 'bg-info-medium'
-                                                )}
-                                                style={{ transform: `translateX(-${100 - uploadPct}%)` }}
-                                            />
-                                        </div>
-
-                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
-                                            <span>
-                                                {formatFileSize(effectiveBytesUploaded)} /{' '}
-                                                {formatFileSize(job.totalBytes)}
-                                            </span>
-                                            <span>
-                                                {uploadEta
-                                                    ? uploadEta
-                                                    : uploadPct >= 100
-                                                      ? 'Delivered'
-                                                      : isUploadFailed
-                                                        ? 'Failed'
-                                                        : status === JobStatus.PENDING_UPLOAD
-                                                          ? 'Awaiting worker'
-                                                          : 'Waiting for Download Phase'}
-                                            </span>
-                                        </div>
+                                            )}
+                                        </span>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Inline Error / Current State Footnote */}
-                            {job.errorMessage ? (
-                                <div className="flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger-light">
+                            {/* Inline Error Footnote */}
+                            {job.errorMessage && (
+                                <div className="flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/10 px-2.5 py-1.5 text-xs text-danger-light">
                                     <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-danger-medium" />
                                     <span className="line-clamp-2">{job.errorMessage}</span>
                                 </div>
-                            ) : (
-                                job.currentState &&
-                                isActive && (
-                                    <p className="text-xs text-muted-foreground truncate">
-                                        {job.currentState}
-                                    </p>
-                                )
                             )}
                         </div>
                     </div>
@@ -824,3 +698,4 @@ export function JobList({
         </Card>
     )
 }
+
