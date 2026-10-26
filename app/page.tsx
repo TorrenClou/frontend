@@ -96,8 +96,8 @@ export default function LandingPage() {
 
           {/* Logo + Wordmark */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-16 h-16 rounded-xl gradient-primary shadow-[0_0_20px_rgba(18,135,117,0.25)]">
-              <CloudDownload className="w-8 h-8 text-white" />
+            <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-primary-foreground border border-primary-400/40">
+              <CloudDownload className="w-7 h-7 text-white" />
             </div>
             <span className="text-2xl font-bold tracking-tight">TorrentDrive</span>
           </div>
@@ -106,7 +106,7 @@ export default function LandingPage() {
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-5xl font-black leading-[1.1] tracking-tight">
               Your torrents.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-300">
+              <span className="text-primary-300">
                 Your cloud.
               </span><br />
               Your server.
@@ -150,7 +150,7 @@ export default function LandingPage() {
         <div className="w-full max-w-md relative z-10">
 
           {/* Card */}
-          <div className="bg-card border border-border rounded-xl shadow-2xl p-8 flex flex-col gap-6">
+          <div className="bg-card border border-border rounded-xl p-8 flex flex-col gap-6">
 
             {/* Card Header */}
             <div className="text-center space-y-1">

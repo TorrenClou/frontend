@@ -177,10 +177,11 @@ export function FileUpload({
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={cn(
-                        'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors',
+                        'group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8',
+                        'transition-[border-color,background-color,transform] duration-150 ease-out-quart',
                         isDragging
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50',
+                            ? 'border-primary bg-primary/10 scale-[1.005]'
+                            : 'border-border hover:border-primary/50 hover:bg-surface-tonal-400/30',
                         disabled && 'cursor-not-allowed opacity-50',
                         displayError && 'border-danger'
                     )}
@@ -194,18 +195,22 @@ export function FileUpload({
                         disabled={disabled}
                         className="absolute inset-0 cursor-pointer opacity-0"
                     />
-                    <Upload
+                    <div
                         className={cn(
-                            'mb-4 h-12 w-12',
-                            isDragging ? 'text-primary' : 'text-muted-foreground'
+                            'mb-4 flex h-12 w-12 items-center justify-center rounded-xl border transition-[border-color,background-color,transform] duration-150 ease-out-quart',
+                            isDragging
+                                ? 'border-primary/50 bg-primary/20 text-primary -translate-y-0.5'
+                                : 'border-border bg-surface-400/60 text-muted-foreground group-hover:border-primary/35 group-hover:text-primary'
                         )}
-                    />
+                    >
+                        <Upload className="h-6 w-6" />
+                    </div>
                     <p className="mb-1 text-sm font-medium">
                         {isDragging
-                            ? `Drop your ${multiple ? 'files' : 'file'} here`
-                            : `Drag & drop your ${multiple ? 'files' : 'file'} here`}
+                            ? `Release to stage ${multiple ? 'torrent files' : 'torrent file'}`
+                            : `Drag & drop your ${multiple ? '.torrent files' : '.torrent file'} here`}
                     </p>
-                    <p className="mb-4 text-xs text-muted-foreground">
+                    <p className="mb-4 text-xs text-muted-foreground tabular-nums">
                         or click to browse (max {formatFileSize(maxSize)} each)
                     </p>
                     <Button type="button" variant="outline" size="sm" disabled={disabled}>
@@ -213,13 +218,13 @@ export function FileUpload({
                     </Button>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+                <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 animate-in">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                         <FileText className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <p className="truncate text-sm font-medium">{selectedFile.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground font-mono tabular-nums">
                             {formatFileSize(selectedFile.size)}
                         </p>
                     </div>
@@ -237,7 +242,7 @@ export function FileUpload({
             )}
 
             {displayError && (
-                <div className="flex items-center gap-2 text-sm text-danger-medium">
+                <div className="flex items-center gap-2 text-sm text-danger-medium animate-in">
                     <AlertCircle className="h-4 w-4" />
                     <span>{displayError}</span>
                 </div>
@@ -245,4 +250,3 @@ export function FileUpload({
         </div>
     )
 }
-

@@ -373,22 +373,22 @@ export function JobCard({
         <TooltipProvider delayDuration={200}>
             <div
                 className={cn(
-                    'group relative rounded-xl border border-surface-300/60 bg-surface-500/80 transition-all duration-150',
+                    'group relative rounded-xl border border-surface-300/60 bg-surface-500/80 transition-colors duration-150',
                     'hover:border-surface-200/80 hover:bg-surface-400/40',
-                    isActive && 'border-primary/30 bg-surface-tonal-500/60',
+                    isActive && 'border-primary/35 bg-surface-tonal-500/60',
                     selected && 'ring-2 ring-primary border-primary/60 bg-primary/10',
                     className
                 )}
             >
-                {/* Left status indicator bar */}
+                {/* Crisp 1px left status hairline */}
                 <div
                     className={cn(
-                        'absolute left-0 top-0 bottom-0 w-1 rounded-l-xl transition-colors',
+                        'absolute left-0 top-3 bottom-3 w-px transition-colors duration-200',
                         config.accentBar
                     )}
                 />
 
-                <div className="p-4 sm:p-5 pl-5 sm:pl-6">
+                <div className="p-4 sm:p-5">
                     <div className="flex items-start gap-3 sm:gap-4">
                         {/* Optional Batch Selection Checkbox */}
                         {selectable && (
@@ -410,7 +410,7 @@ export function JobCard({
                         <Link
                             href={`/jobs/${job.id}`}
                             className={cn(
-                                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-[1.02]',
+                                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors duration-150',
                                 config.bgColor,
                                 config.color
                             )}
@@ -431,7 +431,7 @@ export function JobCard({
                                         >
                                             {displayTitle}
                                         </Link>
-                                        <span className="text-xs font-mono text-muted-foreground shrink-0">
+                                        <span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0">
                                             #{job.id}
                                         </span>
                                     </div>
@@ -443,7 +443,7 @@ export function JobCard({
                                             {categoryMeta.icon}
                                             <span>{categoryMeta.label}</span>
                                             <span className="text-surface-100">·</span>
-                                            <span className="font-mono">
+                                            <span className="font-mono tabular-nums">
                                                 {formatFileSize(job.totalBytes)}
                                             </span>
                                         </span>
@@ -452,7 +452,7 @@ export function JobCard({
                                         {(totalFiles > 0 || isSelective) && (
                                             <span
                                                 className={cn(
-                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono',
+                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono tabular-nums',
                                                     isSelective
                                                         ? 'bg-info/15 text-info-light border border-info/30'
                                                         : 'bg-surface-400/60 text-muted-foreground'
@@ -534,10 +534,19 @@ export function JobCard({
                                             <button
                                                 type="button"
                                                 onClick={handleCopyHash}
-                                                className="inline-flex items-center gap-1 rounded-md bg-surface-400/60 hover:bg-surface-300/80 px-2 py-0.5 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                                                className={cn(
+                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[11px] select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
+                                                    copiedHash
+                                                        ? 'bg-success/15 text-success-medium'
+                                                        : 'bg-surface-400/60 hover:bg-surface-300/80 text-muted-foreground hover:text-foreground'
+                                                )}
                                                 title={`Copy InfoHash: ${job.infoHash}`}
                                             >
-                                                <span>{job.infoHash.slice(0, 8)}…</span>
+                                                <span>
+                                                    {copiedHash
+                                                        ? 'Copied'
+                                                        : `${job.infoHash.slice(0, 8)}…`}
+                                                </span>
                                                 {copiedHash ? (
                                                     <Check className="h-3 w-3 text-success-medium" />
                                                 ) : (
@@ -547,7 +556,7 @@ export function JobCard({
                                         )}
 
                                         {/* Relative Timestamp */}
-                                        <span className="text-muted-foreground/80">
+                                        <span className="text-muted-foreground/80 tabular-nums">
                                             {formatRelativeTime(
                                                 job.createdAt ||
                                                     job.startedAt ||
@@ -559,7 +568,12 @@ export function JobCard({
 
                                 {/* Right Side: Status Badge + Inline Quick Actions */}
                                 <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                                    <Badge variant={config.badgeVariant}>{config.label}</Badge>
+                                    <Badge
+                                        variant={config.badgeVariant}
+                                        className="transition-colors duration-200"
+                                    >
+                                        {config.label}
+                                    </Badge>
 
                                     {canForceStart && onForceStart && (
                                         <Button
@@ -633,7 +647,7 @@ export function JobCard({
 
                                     <Link
                                         href={`/jobs/${job.id}`}
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-surface-300/50 transition-colors"
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:text-primary hover:bg-surface-300/50 transition-colors active:scale-[0.97]"
                                         aria-label={`Open Job #${job.id} details`}
                                     >
                                         <ChevronRight className="h-4 w-4" />
@@ -647,7 +661,7 @@ export function JobCard({
                                     {/* Download Phase: BitTorrent Download */}
                                     <div
                                         className={cn(
-                                            'rounded-lg border px-3 py-2 transition-colors',
+                                            'rounded-lg border px-3 py-2 transition-colors duration-200',
                                             isDownloadingPhase
                                                 ? 'border-primary/40 bg-primary/10'
                                                 : isDownloadFailed
@@ -660,7 +674,7 @@ export function JobCard({
                                                 <Download className="h-3.5 w-3.5 text-primary-200" />
                                                 <span>Download Phase · BitTorrent</span>
                                             </span>
-                                            <div className="flex items-center gap-2 font-mono">
+                                            <div className="flex items-center gap-2 font-mono tabular-nums">
                                                 {downloadSpeed && (
                                                     <span className="inline-flex items-center gap-0.5 text-primary-100 font-semibold">
                                                         <ArrowDown className="h-3 w-3" />
@@ -685,7 +699,7 @@ export function JobCard({
                                         <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
                                             <div
                                                 className={cn(
-                                                    'h-full rounded-full transition-all duration-300',
+                                                    'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint',
                                                     downloadPct >= 100
                                                         ? 'bg-success'
                                                         : isDownloadFailed
@@ -696,7 +710,7 @@ export function JobCard({
                                             />
                                         </div>
 
-                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
                                             <span>
                                                 {formatFileSize(effectiveBytesDownloaded)} /{' '}
                                                 {formatFileSize(job.totalBytes)}
@@ -718,7 +732,7 @@ export function JobCard({
                                     {/* Upload Phase: Cloud Upload */}
                                     <div
                                         className={cn(
-                                            'rounded-lg border px-3 py-2 transition-colors',
+                                            'rounded-lg border px-3 py-2 transition-colors duration-200',
                                             isUploadingPhase
                                                 ? 'border-info/50 bg-info/10'
                                                 : isUploadFailed
@@ -735,7 +749,7 @@ export function JobCard({
                                                     Upload Phase · {job.storageProfileName || 'Cloud Upload'}
                                                 </span>
                                             </span>
-                                            <div className="flex items-center gap-2 font-mono shrink-0">
+                                            <div className="flex items-center gap-2 font-mono tabular-nums shrink-0">
                                                 {uploadSpeed && (
                                                     <span className="inline-flex items-center gap-0.5 text-info-light font-semibold">
                                                         <ArrowUp className="h-3 w-3" />
@@ -762,7 +776,7 @@ export function JobCard({
                                         <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
                                             <div
                                                 className={cn(
-                                                    'h-full rounded-full transition-all duration-300',
+                                                    'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint',
                                                     uploadPct >= 100
                                                         ? 'bg-success'
                                                         : isUploadFailed
@@ -773,7 +787,7 @@ export function JobCard({
                                             />
                                         </div>
 
-                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono">
+                                        <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
                                             <span>
                                                 {formatFileSize(effectiveBytesUploaded)} /{' '}
                                                 {formatFileSize(job.totalBytes)}

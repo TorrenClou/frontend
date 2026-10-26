@@ -21,39 +21,39 @@ interface StatsCardProps {
 
 const colorClasses = {
     primary: {
-        gradient: 'bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20',
+        surface: 'bg-surface-tonal-500/80 border-primary/25',
         activeRing: 'ring-2 ring-primary border-primary/60 bg-primary/15',
-        hoverBorder: 'hover:border-primary/50',
+        hoverBorder: 'hover:border-primary/50 hover:bg-surface-tonal-400/60',
         text: 'text-primary',
-        iconBg: 'bg-primary/20',
+        iconBg: 'bg-primary/15 border border-primary/25',
     },
     info: {
-        gradient: 'bg-gradient-to-br from-info/5 to-info/10 border-info/20',
+        surface: 'bg-surface-tonal-500/80 border-info/25',
         activeRing: 'ring-2 ring-info-medium border-info-medium/60 bg-info/15',
-        hoverBorder: 'hover:border-info-medium/50',
+        hoverBorder: 'hover:border-info-medium/50 hover:bg-surface-tonal-400/60',
         text: 'text-info-medium',
-        iconBg: 'bg-info/20',
+        iconBg: 'bg-info/15 border border-info/25',
     },
     success: {
-        gradient: 'bg-gradient-to-br from-success/5 to-success/10 border-success/20',
+        surface: 'bg-surface-tonal-500/80 border-success/25',
         activeRing: 'ring-2 ring-success border-success/60 bg-success/15',
-        hoverBorder: 'hover:border-success/50',
+        hoverBorder: 'hover:border-success/50 hover:bg-surface-tonal-400/60',
         text: 'text-success',
-        iconBg: 'bg-success/20',
+        iconBg: 'bg-success/15 border border-success/25',
     },
     danger: {
-        gradient: 'bg-gradient-to-br from-danger/5 to-danger/10 border-danger/20',
+        surface: 'bg-surface-tonal-500/80 border-danger/25',
         activeRing: 'ring-2 ring-danger border-danger/60 bg-danger/15',
-        hoverBorder: 'hover:border-danger/50',
+        hoverBorder: 'hover:border-danger/50 hover:bg-surface-tonal-400/60',
         text: 'text-danger',
-        iconBg: 'bg-danger/20',
+        iconBg: 'bg-danger/15 border border-danger/25',
     },
     warning: {
-        gradient: 'bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20',
+        surface: 'bg-surface-tonal-500/80 border-warning/25',
         activeRing: 'ring-2 ring-warning border-warning/60 bg-warning/15',
-        hoverBorder: 'hover:border-warning/50',
+        hoverBorder: 'hover:border-warning/50 hover:bg-surface-tonal-400/60',
         text: 'text-warning',
-        iconBg: 'bg-warning/20',
+        iconBg: 'bg-warning/15 border border-warning/25',
     },
 }
 
@@ -88,9 +88,13 @@ export function StatsCard({
                     : undefined
             }
             className={cn(
-                colors.gradient,
-                'transition-all duration-150',
-                isInteractive && cn('cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring', colors.hoverBorder),
+                colors.surface,
+                'transition-[background-color,border-color,transform] duration-150 ease-out-quart',
+                isInteractive &&
+                    cn(
+                        'cursor-pointer select-none active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        colors.hoverBorder
+                    ),
                 active && colors.activeRing,
                 className
             )}
@@ -102,10 +106,10 @@ export function StatsCard({
                             {title}
                         </p>
                         <p className={cn('text-2xl sm:text-3xl font-bold mt-1 font-mono tabular-nums', colors.text)}>
-                            {loading ? '...' : value}
+                            {loading ? '—' : value}
                         </p>
                         {subtitle && (
-                            <div className="mt-1.5 text-xs text-muted-foreground truncate">
+                            <div className="mt-1.5 text-xs text-muted-foreground truncate tabular-nums">
                                 {subtitle}
                             </div>
                         )}

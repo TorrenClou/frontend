@@ -46,17 +46,17 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Download card */}
-            <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
                 <div className="absolute top-3 right-3 opacity-[0.07] pointer-events-none">
                     <Download className="h-16 w-16" />
                 </div>
                 <div className="relative flex flex-col gap-4">
                     <div className="flex items-end justify-between">
                         <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                                Download
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Download Phase
                             </p>
-                            <p className="text-2xl font-bold font-mono">
+                            <p className="text-2xl font-bold font-mono tabular-nums">
                                 {downloadPct.toFixed(0)}%
                             </p>
                         </div>
@@ -71,12 +71,12 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                     {/* Progress bar */}
                     <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary rounded-full transition-all duration-500"
+                            className="h-full bg-primary rounded-full transition-[width] duration-500 ease-out-quint"
                             style={{ width: `${downloadPct}%` }}
                         />
                     </div>
 
-                    <div className="flex justify-between items-center text-xs text-muted-foreground font-mono">
+                    <div className="flex justify-between items-center text-xs text-muted-foreground font-mono tabular-nums">
                         <span>
                             {formatFileSize(job.bytesDownloaded)} / {formatFileSize(job.totalBytes)}
                         </span>
@@ -91,17 +91,17 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
             </div>
 
             {/* Upload card */}
-            <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden shadow-sm">
+            <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
                 <div className="absolute top-3 right-3 opacity-[0.07] pointer-events-none">
                     <Upload className="h-16 w-16" />
                 </div>
                 <div className="relative flex flex-col gap-4">
                     <div className="flex items-end justify-between">
                         <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                                Upload
+                            <p className="text-xs font-medium text-muted-foreground mb-1">
+                                Upload Phase
                             </p>
-                            <p className="text-2xl font-bold font-mono">
+                            <p className="text-2xl font-bold font-mono tabular-nums">
                                 {uploadPct.toFixed(0)}%
                             </p>
                         </div>
@@ -117,18 +117,14 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                     <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                         <div
                             className={cn(
-                                'h-full rounded-full transition-all duration-500 relative',
+                                'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint relative',
                                 uploadPct === 100 ? 'bg-primary' : 'bg-info-medium'
                             )}
                             style={{ width: `${uploadPct}%` }}
-                        >
-                            {isUploading && (
-                                <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                            )}
-                        </div>
+                        />
                     </div>
 
-                    <div className="flex justify-between items-center text-xs text-muted-foreground font-mono">
+                    <div className="flex justify-between items-center text-xs text-muted-foreground font-mono tabular-nums">
                         <span>
                             {formatFileSize(isCompleted ? job.totalBytes : job.bytesUploaded)} / {formatFileSize(job.totalBytes)}
                         </span>
@@ -144,6 +140,3 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
         </div>
     )
 }
-
-
-

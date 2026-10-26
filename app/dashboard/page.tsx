@@ -66,24 +66,36 @@ export default function DashboardPage() {
     const activeSubtitle = useMemo(() => {
         if (liveDownSpeed || liveUpSpeed) {
             return (
-                <span className="inline-flex items-center gap-2 font-mono">
+                <span className="inline-flex items-center gap-2 font-mono tabular-nums">
                     {liveDownSpeed && <span className="text-primary-100">↓ {liveDownSpeed}</span>}
                     {liveUpSpeed && <span className="text-info-light">↑ {liveUpSpeed}</span>}
                 </span>
             )
         }
-        return `${jobStats?.downloadingJobs ?? 0} dl · ${(jobStats?.uploadingJobs ?? 0) + (jobStats?.pendingUploadJobs ?? 0)} ul`
+        return (
+            <span className="tabular-nums">
+                {`${jobStats?.downloadingJobs ?? 0} dl · ${(jobStats?.uploadingJobs ?? 0) + (jobStats?.pendingUploadJobs ?? 0)} ul`}
+            </span>
+        )
     }, [liveDownSpeed, liveUpSpeed, jobStats])
 
     const completedSubtitle = useMemo(() => {
         const bytes = jobStats?.totalBytesTransferred ?? 0
-        return bytes > 0 ? `${formatFileSize(bytes)} transferred` : 'View completed jobs'
+        return (
+            <span className="tabular-nums">
+                {bytes > 0 ? `${formatFileSize(bytes)} transferred` : 'View completed jobs'}
+            </span>
+        )
     }, [jobStats?.totalBytesTransferred])
 
     const failedSubtitle = useMemo(() => {
         const retrying = jobStats?.retryingJobs ?? 0
         const stalled = jobStats?.stalledJobs ?? 0
-        return `${retrying} retrying · ${stalled} stalled`
+        return (
+            <span className="tabular-nums">
+                {`${retrying} retrying · ${stalled} stalled`}
+            </span>
+        )
     }, [jobStats?.retryingJobs, jobStats?.stalledJobs])
 
     const handleQuickSearchSubmit = (e: React.FormEvent) => {
@@ -113,7 +125,7 @@ export default function DashboardPage() {
                             variant="outline"
                             onClick={() => retryAllFailedMutation.mutate({})}
                             disabled={retryAllFailedMutation.isPending}
-                            className="border-danger/40 bg-danger/10 text-danger-light hover:bg-danger/20"
+                            className="border-danger/40 bg-danger/10 text-danger-light hover:bg-danger/20 tabular-nums"
                         >
                             {retryAllFailedMutation.isPending ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -213,9 +225,9 @@ export default function DashboardPage() {
                                     type="button"
                                     onClick={() => setRecentPhase(tab.id)}
                                     className={cn(
-                                        'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                                        'rounded-md px-2.5 py-1 text-xs font-medium select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
                                         recentPhase === tab.id
-                                            ? 'bg-primary text-white shadow-sm'
+                                            ? 'bg-primary text-white'
                                             : 'text-muted-foreground hover:text-foreground'
                                     )}
                                 >
