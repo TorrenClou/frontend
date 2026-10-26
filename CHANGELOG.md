@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.3.0] - 2026-10-26
+
+* feat(ci): fold deploy repo into backend and unify all-in-one release pipeline (fdd6fa1)
+* docs(ci): add ADR-0005, release glossary terms, docs-only build skip, and upstream bump forwarding (f500f4c)
+
 ## [2.2.0] - 2026-10-25
 
 * ci: simplify CI/CD pipeline with direct automatic SemVer releases on main (cea91f0)
