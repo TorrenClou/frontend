@@ -7,7 +7,7 @@ torrent-to-cloud.
 >
 > <!-- snippet:install-linux -->
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/TorrentDrive/deploy/main/install.sh | bash
+> curl -fsSL https://raw.githubusercontent.com/TorrentDrive/backend/main/install.sh | bash
 > ```
 > <!-- /snippet -->
 >
@@ -62,9 +62,9 @@ npx tsc --noEmit     # type check, same gate CI runs
 
 | Repository | Contents |
 |------------|----------|
-| [backend](https://github.com/TorrentDrive/backend) | .NET 9 API and workers |
+| [backend](https://github.com/TorrentDrive/backend) | .NET 9 API, workers, all-in-one image, installer, and PaaS blueprints |
+| [frontend](https://github.com/TorrentDrive/frontend) | Next.js web app |
 | [website](https://github.com/TorrentDrive/website) | Documentation site — the canonical docs live here |
-| [deploy](https://github.com/TorrentDrive/deploy) | All-in-one image, installer, CI |
 
 ## License
 

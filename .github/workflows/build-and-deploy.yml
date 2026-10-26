@@ -337,7 +337,7 @@ jobs:
           bump="${{ needs.build.outputs.bump }}"
           sha="${{ steps.publish.outputs.release_sha }}"
 
-          if gh api repos/TorrentDrive/deploy/dispatches \
+          if gh api repos/TorrentDrive/backend/dispatches \
             --method POST \
             -f event_type="build-combined" \
             -f "client_payload[repository]=${GITHUB_REPOSITORY}" \
@@ -345,7 +345,7 @@ jobs:
             -f "client_payload[ref]=v${version}" \
             -f "client_payload[bump]=${bump}" \
             -f "client_payload[actor]=${GITHUB_ACTOR}"; then
-            echo "Dispatched build-combined to TorrentDrive/deploy for v${version} (${sha}, bump=${bump})."
+            echo "Dispatched build-combined to TorrentDrive/backend for v${version} (${sha}, bump=${bump})."
           else
-            echo "::warning::Failed to dispatch build-combined to TorrentDrive/deploy. Check DEPLOY_PAT permissions."
+            echo "::warning::Failed to dispatch build-combined to TorrentDrive/backend. Check DEPLOY_PAT permissions."
           fi
