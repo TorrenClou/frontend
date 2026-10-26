@@ -1,5 +1,7 @@
 'use client'
 
+import * as React from 'react'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,18 +11,20 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
-    RefreshCcw,
+    RefreshCw,
     StopCircle,
     Loader2,
     ArrowLeft,
-    PlayCircle,
+    Play,
+    Cloud,
+    Database,
 } from 'lucide-react'
-import Link from 'next/link'
 import type { Job } from '@/types/jobs'
 import { getJobStatusConfig } from './JobStatusConfig'
 import { JobStatus } from '@/types/enums'
 import { useJobsStore } from '@/stores/jobsStore'
 import { useJobQueueStatus } from '@/hooks/useJobs'
+import { formatRelativeTime } from '@/lib/utils/formatters'
 
 interface JobHeaderProps {
     job: Job
@@ -43,48 +47,70 @@ export function JobHeader({
     const { openCancelModal } = useJobsStore()
     const { data: queue } = useJobQueueStatus(job.canForceStart)
 
-    // With every slot taken the job is waiting its turn, and re-dispatching only sends
-    // it back to the same queue. Offering the button there is what misled users before.
     const slotsFull =
-        job.status === JobStatus.QUEUED && !!queue && queue.downloadSlotsFull
+        job.status === JobStatus.QUEUED && Boolean(queue?.downloadSlotsFull)
+
+    const displayTitle = job.requestFileName || job.fileName || `Job #${job.id}`
+    const isS3 = job.storageProviderType?.toLowerCase() === 's3' || job.storageProfileName?.toLowerCase().includes('s3')
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:gap-4">
             {/* Back link */}
             <Link
                 href="/jobs"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors w-fit"
             >
-                <ArrowLeft className="h-4 w-4" />
-                Jobs
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to Transfers
             </Link>
 
-            {/* Title row */}
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <h1 className="text-2xl font-bold tracking-tight">
-                            Job{' '}
-                            <span className="font-mono text-muted-foreground text-xl">
-                                #{job.id}
-                            </span>
+            {/* Title & Actions Row */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    {/* Content-First Title Row */}
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate max-w-[680px]">
+                            {displayTitle}
                         </h1>
-                        <Badge variant={config.badgeVariant}>
+                        <span className="font-mono text-xs text-muted-foreground bg-surface-400/50 border border-surface-300/40 rounded px-1.5 py-0.5 tabular-nums">
+                            #{job.id}
+                        </span>
+                        <Badge variant={config.badgeVariant} className="text-xs h-5.5 px-2">
                             {config.label}
                         </Badge>
                     </div>
-                    {job.requestFileName && (
-                        <p className="text-sm text-muted-foreground">{job.requestFileName}</p>
-                    )}
-                    {job.currentState && (
-                        <p className="text-xs text-muted-foreground">{job.currentState}</p>
-                    )}
+
+                    {/* Metadata Subtitle Strip */}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                        <span className="inline-flex items-center gap-1">
+                            {isS3 ? (
+                                <Database className="h-3 w-3 text-warning-medium" />
+                            ) : (
+                                <Cloud className="h-3 w-3 text-primary-200" />
+                            )}
+                            <span className="font-medium text-foreground/80">
+                                {job.storageProfileName || 'Storage Destination'}
+                            </span>
+                        </span>
+                        <span>·</span>
+                        <span>
+                            Started {formatRelativeTime(job.createdAt || new Date().toISOString())}
+                        </span>
+                        {job.currentState && (
+                            <>
+                                <span>·</span>
+                                <span className="text-foreground/70 font-mono text-[11px]">
+                                    {job.currentState}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
                     {job.canForceStart && onForceStart && !slotsFull && (
-                        <TooltipProvider delayDuration={100}>
+                        <TooltipProvider delayDuration={150}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -92,26 +118,27 @@ export function JobHeader({
                                         size="sm"
                                         onClick={onForceStart}
                                         disabled={isForceStarting}
+                                        className="h-8.5 text-xs border-primary/40 text-primary-100 hover:bg-primary/15"
                                     >
                                         {isForceStarting ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                                         ) : (
-                                            <PlayCircle className="mr-2 h-4 w-4" />
+                                            <Play className="mr-1.5 h-3.5 w-3.5" />
                                         )}
                                         Force Start
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p className="max-w-[240px]">
-                                        Hand this job straight to a worker. Use it when a job has
-                                        sat waiting far longer than it should.
+                                        Dispatch this job straight to a worker immediately.
                                     </p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     )}
+
                     {job.canRetry && onRetry && (
-                        <TooltipProvider delayDuration={100}>
+                        <TooltipProvider delayDuration={150}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -119,23 +146,25 @@ export function JobHeader({
                                         size="sm"
                                         onClick={onRetry}
                                         disabled={isRetrying}
+                                        className="h-8.5 text-xs border-primary/40 text-primary-100 hover:bg-primary/15"
                                     >
                                         {isRetrying ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                                         ) : (
-                                            <RefreshCcw className="mr-2 h-4 w-4" />
+                                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                                         )}
                                         Retry
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Retry this job from its current phase</p>
+                                    <p>Retry this transfer from its current phase</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     )}
+
                     {job.canCancel && (
-                        <TooltipProvider delayDuration={100}>
+                        <TooltipProvider delayDuration={150}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -143,18 +172,18 @@ export function JobHeader({
                                         size="sm"
                                         onClick={openCancelModal}
                                         disabled={isCancelling}
-                                        className="border-danger/50 text-danger hover:bg-danger/10 hover:text-danger"
+                                        className="h-8.5 text-xs border-danger/40 text-danger-light hover:bg-danger/15"
                                     >
                                         {isCancelling ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                                         ) : (
-                                            <StopCircle className="mr-2 h-4 w-4" />
+                                            <StopCircle className="mr-1.5 h-3.5 w-3.5" />
                                         )}
-                                        Cancel Job
+                                        Cancel Transfer
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p>Cancel this job</p>
+                                    <p>Halt and cancel this transfer job</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
