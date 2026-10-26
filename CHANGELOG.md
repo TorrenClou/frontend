@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.4.1] - 2026-10-26
+
+* fix(jobs): enforce glossary phase labels, use design tokens, wire hasError facet, and update jobsStore (9f82ed0)
+
 ## [2.4.0] - 2026-10-26
 
 * feat(jobs): build jobs command console with faceted filters, token search, dual-phase cards, and batch actions (d94456f)
