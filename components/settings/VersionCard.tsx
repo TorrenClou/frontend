@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Card,
   CardContent,
@@ -25,6 +24,7 @@ import {
   Server,
 } from 'lucide-react'
 import { useVersionAndUpdates } from '@/hooks/useVersion'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { formatRelativeTime } from '@/lib/utils/formatters'
 import { cn } from '@/lib/utils'
 
@@ -42,13 +42,10 @@ export function VersionCard() {
     checkForUpdates,
   } = useVersionAndUpdates()
 
-  const [copiedCmd, setCopiedCmd] = useState(false)
+  const { copied: copiedCmd, copy } = useCopyToClipboard(1800)
 
   const handleCopyUpgrade = () => {
-    navigator.clipboard.writeText(UPGRADE_COMMAND).then(() => {
-      setCopiedCmd(true)
-      setTimeout(() => setCopiedCmd(false), 1800)
-    })
+    void copy(UPGRADE_COMMAND)
   }
 
   const hasUpdate = Boolean(updateCheck?.hasUpdate && updateCheck?.latestVersion)

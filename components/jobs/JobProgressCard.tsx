@@ -1,8 +1,8 @@
 'use client'
 
-import { formatFileSize, formatTransferSpeed } from '@/lib/utils/formatters'
+import { formatFileSize } from '@/lib/utils/formatters'
+import { getJobPhaseProgress } from '@/lib/utils/job-progress'
 import type { Job } from '@/types/jobs'
-import { JobStatus } from '@/types/enums'
 import { Download, Upload, Gauge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -11,36 +11,18 @@ interface JobProgressCardProps {
 }
 
 export function JobProgressCard({ job }: JobProgressCardProps) {
-    const status = job.status as JobStatus
-
-    const isDownloading = [JobStatus.DOWNLOADING, JobStatus.TORRENT_DOWNLOAD_RETRY].includes(status)
-    // GOOGLE_DRIVE_FAILED is its own terminal error state — not an active upload
-    const isUploading = [JobStatus.UPLOADING, JobStatus.UPLOAD_RETRY].includes(status)
-    const isUploadFailed = status === JobStatus.GOOGLE_DRIVE_FAILED
-    const isPastDownload = [
-        JobStatus.PENDING_UPLOAD,
-        JobStatus.UPLOADING,
-        JobStatus.UPLOAD_RETRY,
-        JobStatus.GOOGLE_DRIVE_FAILED,
-        JobStatus.COMPLETED,
-    ].includes(status)
-    const isCompleted = status === JobStatus.COMPLETED
-
-    // Sanitize progressPercentage to guard against NaN / undefined at runtime
-    const rawDownloadPct = Number(job.progressPercentage)
-    const safeDownloadPct = Number.isFinite(rawDownloadPct) ? Math.min(100, Math.max(0, rawDownloadPct)) : 0
-    const rawUploadPct = Number(job.uploadProgressPercentage)
-    const safeUploadPct = Number.isFinite(rawUploadPct) ? Math.min(100, Math.max(0, rawUploadPct)) : 0
-
-    const downloadPct = isCompleted || isPastDownload ? 100 : isDownloading ? safeDownloadPct : 0
-    const uploadPct = isCompleted ? 100 : isUploading ? safeUploadPct : 0
+    const {
+        isDownloadingPhase: isDownloading,
+        isUploadingPhase: isUploading,
+        isUploadFailed,
+        isCompleted,
+        downloadPct,
+        uploadPct,
+        downloadSpeed,
+        uploadSpeed,
+    } = getJobPhaseProgress(job)
 
     const downloadLabel = downloadPct === 100 ? 'Completed' : isDownloading ? 'In Progress' : 'Pending'
-
-    // Only shown while that phase is actually moving; a stale rate on a finished job
-    // would look like it is still transferring.
-    const downloadSpeed = isDownloading ? formatTransferSpeed(job.downloadSpeedBytesPerSecond) : null
-    const uploadSpeed = isUploading ? formatTransferSpeed(job.uploadSpeedBytesPerSecond) : null
     const uploadLabel = uploadPct === 100 ? 'Completed' : isUploadFailed ? 'Upload Failed' : isUploading ? 'Uploading' : 'Pending'
 
     return (

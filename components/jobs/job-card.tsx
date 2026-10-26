@@ -15,8 +15,9 @@ import {
 import {
     formatFileSize,
     formatRelativeTime,
-    formatTransferSpeed,
 } from '@/lib/utils/formatters'
+import { getJobPhaseProgress } from '@/lib/utils/job-progress'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { JobStatus, StorageRouteReason } from '@/types/enums'
 import type { Job, JobCardProps, JobListProps } from '@/types/jobs'
 import {
@@ -245,81 +246,26 @@ export function JobCard({
     isForceStarting = false,
     isCancelling = false,
 }: JobCardProps) {
-    const [copiedHash, setCopiedHash] = React.useState(false)
+    const { copied: copiedHash, copy: copyToClipboard } = useCopyToClipboard(1800)
 
-    const status = (job.status as JobStatus) || JobStatus.QUEUED
+    const {
+        status,
+        isDownloadingPhase,
+        isUploadingPhase,
+        isCompleted,
+        isFailed,
+        isDownloadFailed,
+        isUploadFailed,
+        isActive,
+        downloadPct,
+        uploadPct,
+        effectiveBytesDownloaded,
+        effectiveBytesUploaded,
+        downloadSpeed,
+        uploadSpeed,
+    } = getJobPhaseProgress(job)
+
     const config = statusConfig[status] ?? statusConfig[JobStatus.QUEUED]
-
-    const isDownloadingPhase = [
-        JobStatus.DOWNLOADING,
-        JobStatus.TORRENT_DOWNLOAD_RETRY,
-    ].includes(status)
-
-    const isUploadingPhase = [
-        JobStatus.UPLOADING,
-        JobStatus.UPLOAD_RETRY,
-    ].includes(status)
-
-    const isPastDownloadPhase = [
-        JobStatus.PENDING_UPLOAD,
-        JobStatus.UPLOADING,
-        JobStatus.UPLOAD_RETRY,
-        JobStatus.UPLOAD_FAILED,
-        JobStatus.GOOGLE_DRIVE_FAILED,
-        JobStatus.COMPLETED,
-    ].includes(status)
-
-    const isCompleted = status === JobStatus.COMPLETED
-    const isFailed = [
-        JobStatus.FAILED,
-        JobStatus.TORRENT_FAILED,
-        JobStatus.UPLOAD_FAILED,
-        JobStatus.GOOGLE_DRIVE_FAILED,
-    ].includes(status)
-    const isDownloadFailed = status === JobStatus.TORRENT_FAILED
-    const isUploadFailed = [
-        JobStatus.UPLOAD_FAILED,
-        JobStatus.GOOGLE_DRIVE_FAILED,
-    ].includes(status)
-
-    const isActive =
-        job.isActive ??
-        [
-            JobStatus.QUEUED,
-            JobStatus.DOWNLOADING,
-            JobStatus.PENDING_UPLOAD,
-            JobStatus.UPLOADING,
-            JobStatus.TORRENT_DOWNLOAD_RETRY,
-            JobStatus.UPLOAD_RETRY,
-        ].includes(status)
-
-    // Raw progress fallback for legacy callers
-    const rawDownloadPct = Number(job.progressPercentage ?? job.progress ?? 0)
-    const safeDownloadPct = Number.isFinite(rawDownloadPct)
-        ? Math.min(100, Math.max(0, rawDownloadPct))
-        : 0
-    const rawUploadPct = Number(job.uploadProgressPercentage ?? 0)
-    const safeUploadPct = Number.isFinite(rawUploadPct)
-        ? Math.min(100, Math.max(0, rawUploadPct))
-        : 0
-
-    const downloadPct = isCompleted || isPastDownloadPhase ? 100 : safeDownloadPct
-    const uploadPct = isCompleted ? 100 : safeUploadPct
-
-    const effectiveBytesDownloaded =
-        isCompleted || isPastDownloadPhase
-            ? job.totalBytes
-            : Math.min(job.totalBytes || job.bytesDownloaded, job.bytesDownloaded)
-    const effectiveBytesUploaded = isCompleted
-        ? job.totalBytes
-        : Math.min(job.totalBytes || (job.bytesUploaded ?? 0), job.bytesUploaded ?? 0)
-
-    const downloadSpeed = isDownloadingPhase
-        ? formatTransferSpeed(job.downloadSpeedBytesPerSecond)
-        : null
-    const uploadSpeed = isUploadingPhase
-        ? formatTransferSpeed(job.uploadSpeedBytesPerSecond)
-        : null
 
     const downloadEta = isDownloadingPhase
         ? formatEta(
@@ -361,10 +307,9 @@ export function JobCard({
         e.preventDefault()
         e.stopPropagation()
         if (!job.infoHash) return
-        navigator.clipboard.writeText(job.infoHash)
-        setCopiedHash(true)
-        toast.success('InfoHash copied to clipboard')
-        setTimeout(() => setCopiedHash(false), 1800)
+        void copyToClipboard(job.infoHash).then((ok) => {
+            if (ok) toast.success('InfoHash copied to clipboard')
+        })
     }
 
     const showPipeline = isActive || isCompleted || isFailed

@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -23,6 +22,7 @@ import {
     Lock,
 } from 'lucide-react'
 import { formatFileSize, formatInfoHash } from '@/lib/utils/formatters'
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { getItemSelectedSize, type TorrentBatchItem } from '@/stores/torrentStore'
@@ -74,7 +74,7 @@ export function TorrentReviewCard({
     onRemove,
     destinationSlot,
 }: TorrentReviewCardProps) {
-    const [copied, setCopied] = useState(false)
+    const { copied, copy } = useCopyToClipboard(1800)
 
     const analysis = item.analysis
     const isBlocked = item.status === 'error' || item.status === 'duplicate'
@@ -82,10 +82,9 @@ export function TorrentReviewCard({
     const handleCopyHash = (e: React.MouseEvent) => {
         e.stopPropagation()
         if (!analysis) return
-        navigator.clipboard.writeText(analysis.infoHash)
-        setCopied(true)
-        toast.success('Info hash copied to clipboard')
-        setTimeout(() => setCopied(false), 2000)
+        void copy(analysis.infoHash).then((ok) => {
+            if (ok) toast.success('Info hash copied to clipboard')
+        })
     }
 
     if (!analysis) {

@@ -779,6 +779,7 @@ function JobsConsoleContent() {
                                     <button
                                         key={token}
                                         type="button"
+                                        aria-pressed={active}
                                         onClick={() => {
                                             const next = toggleTokenInQuery(searchInput, token)
                                             setSearchInput(next)
@@ -807,6 +808,7 @@ function JobsConsoleContent() {
                                 <button
                                     key={tab.id}
                                     type="button"
+                                    aria-pressed={isSelected}
                                     onClick={() =>
                                         updateUrlParams({
                                             phase: tab.id,
@@ -824,7 +826,7 @@ function JobsConsoleContent() {
                                     <span>{tab.label}</span>
                                     <span
                                         className={cn(
-                                            'rounded-full px-1.5 py-0.5 font-mono text-[11px]',
+                                            'rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums',
                                             isSelected
                                                 ? 'bg-black/25 text-white'
                                                 : 'bg-surface-300/80 text-muted-foreground'
