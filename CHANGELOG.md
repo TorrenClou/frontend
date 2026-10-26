@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.5.0] - 2026-10-26
+
+* feat(ui): add damped progress physics, tabular telemetry, and tactile micro-interactions (8d1e265)
+
 ## [2.4.1] - 2026-10-26
 
 * fix(jobs): enforce glossary phase labels, use design tokens, wire hasError facet, and update jobsStore (9f82ed0)
