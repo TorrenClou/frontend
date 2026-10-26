@@ -1,6 +1,7 @@
 // Jobs Components Export
 export { JobCard, JobList } from './job-card'
 export { CompactTransferRow } from './CompactTransferRow'
+export { CompactJobTableRow } from './CompactJobTableRow'
 export { UnifiedProgressPipeline } from './UnifiedProgressPipeline'
 export { JobDetail } from './JobDetail'
 export { JobTimeline } from './JobTimeline'
