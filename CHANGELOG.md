@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.3] - 2026-10-26
+
+* fix(layout): restore locked 100dvh viewport shell and eliminate double document scrollbar (f3917cb)
+
 ## [2.6.2] - 2026-10-26
 
 * refactor(ui): extract shared getJobPhaseProgress and useCopyToClipboard (3d8e031)
