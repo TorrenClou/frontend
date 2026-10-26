@@ -30,6 +30,7 @@ import {
     Pin,
     Shuffle,
     AlertTriangle,
+    Ban,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -91,6 +92,7 @@ export function CompactJobTableRow({
         isUploadingPhase,
         isCompleted,
         isFailed,
+        isCancelled,
         isActive,
         downloadPct,
         uploadPct,
@@ -120,11 +122,12 @@ export function CompactJobTableRow({
 
     const canRetry = Boolean(job.canRetry || isFailed)
     const canForceStart = Boolean(
-        job.canForceStart ||
+        (job.canForceStart ||
             status === JobStatus.QUEUED ||
-            status === JobStatus.PENDING_UPLOAD
+            status === JobStatus.PENDING_UPLOAD) &&
+            !isCancelled
     )
-    const canCancel = Boolean(job.canCancel || isActive)
+    const canCancel = Boolean((job.canCancel || isActive) && !isCancelled)
 
     const getStatusDot = () => {
         if (isCompleted) {
@@ -132,6 +135,9 @@ export function CompactJobTableRow({
         }
         if (isFailed) {
             return <AlertCircle className="h-4 w-4 text-danger-medium shrink-0" />
+        }
+        if (isCancelled) {
+            return <Ban className="h-4 w-4 text-muted-foreground/80 shrink-0" />
         }
         if (isDownloadingPhase) {
             return (
@@ -257,6 +263,8 @@ export function CompactJobTableRow({
                             <span className="text-success-medium text-[11px]">Ready</span>
                         ) : isFailed ? (
                             <span className="text-danger-light text-[11px]">Failed</span>
+                        ) : isCancelled ? (
+                            <span className="text-muted-foreground/80 text-[11px]">Cancelled</span>
                         ) : (
                             <span className="text-muted-foreground/60 text-[11px]">
                                 {status === JobStatus.QUEUED ? 'Queued' : 'Waiting'}
@@ -350,4 +358,3 @@ export function CompactJobTableRow({
         </TooltipProvider>
     )
 }
-

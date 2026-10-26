@@ -9,6 +9,7 @@ export interface JobPhaseProgress {
   isPastDownloadPhase: boolean
   isCompleted: boolean
   isFailed: boolean
+  isCancelled: boolean
   isDownloadFailed: boolean
   isUploadFailed: boolean
   isActive: boolean
@@ -21,22 +22,25 @@ export interface JobPhaseProgress {
 }
 
 /**
- * Authoritative dual-phase progress normalization shared across JobCard and JobProgressCard.
+ * Authoritative dual-phase progress normalization shared across JobCard, CompactJobTableRow,
+ * CompactTransferRow, and JobProgressCard.
  */
 export function getJobPhaseProgress(job: Job): JobPhaseProgress {
   const status = (job.status as JobStatus) || JobStatus.QUEUED
 
-  const isDownloadingPhase = [
+  const isCancelled = status === JobStatus.CANCELLED
+
+  const isDownloadingPhase = !isCancelled && [
     JobStatus.DOWNLOADING,
     JobStatus.TORRENT_DOWNLOAD_RETRY,
   ].includes(status)
 
-  const isUploadingPhase = [
+  const isUploadingPhase = !isCancelled && [
     JobStatus.UPLOADING,
     JobStatus.UPLOAD_RETRY,
   ].includes(status)
 
-  const isPastDownloadPhase = [
+  const isPastDownloadPhase = !isCancelled && [
     JobStatus.PENDING_UPLOAD,
     JobStatus.UPLOADING,
     JobStatus.UPLOAD_RETRY,
@@ -62,15 +66,20 @@ export function getJobPhaseProgress(job: Job): JobPhaseProgress {
   ].includes(status)
 
   const isActive =
-    job.isActive ??
-    [
-      JobStatus.QUEUED,
-      JobStatus.DOWNLOADING,
-      JobStatus.PENDING_UPLOAD,
-      JobStatus.UPLOADING,
-      JobStatus.TORRENT_DOWNLOAD_RETRY,
-      JobStatus.UPLOAD_RETRY,
-    ].includes(status)
+    !isCancelled &&
+    !isFailed &&
+    !isCompleted &&
+    Boolean(
+      job.isActive ??
+        [
+          JobStatus.QUEUED,
+          JobStatus.DOWNLOADING,
+          JobStatus.PENDING_UPLOAD,
+          JobStatus.UPLOADING,
+          JobStatus.TORRENT_DOWNLOAD_RETRY,
+          JobStatus.UPLOAD_RETRY,
+        ].includes(status)
+    )
 
   const rawDownloadPct = Number(job.progressPercentage ?? job.progress ?? 0)
   const safeDownloadPct = Number.isFinite(rawDownloadPct)
@@ -123,6 +132,7 @@ export function getJobPhaseProgress(job: Job): JobPhaseProgress {
     isPastDownloadPhase,
     isCompleted,
     isFailed,
+    isCancelled,
     isDownloadFailed,
     isUploadFailed,
     isActive,

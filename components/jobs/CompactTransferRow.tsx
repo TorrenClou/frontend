@@ -27,6 +27,7 @@ import {
     Clock,
     Cloud,
     Database,
+    Ban,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -82,6 +83,7 @@ export function CompactTransferRow({
         isUploadingPhase,
         isCompleted,
         isFailed,
+        isCancelled,
         isActive,
         downloadPct,
         uploadPct,
@@ -111,11 +113,12 @@ export function CompactTransferRow({
 
     const canRetry = Boolean(job.canRetry || isFailed)
     const canForceStart = Boolean(
-        job.canForceStart ||
+        (job.canForceStart ||
             status === JobStatus.QUEUED ||
-            status === JobStatus.PENDING_UPLOAD
+            status === JobStatus.PENDING_UPLOAD) &&
+            !isCancelled
     )
-    const canCancel = Boolean(job.canCancel || isActive)
+    const canCancel = Boolean((job.canCancel || isActive) && !isCancelled)
 
     // Status dot color & pulse
     const getStatusIndicator = () => {
@@ -124,6 +127,9 @@ export function CompactTransferRow({
         }
         if (isFailed) {
             return <AlertCircle className="h-4 w-4 text-danger-medium shrink-0" />
+        }
+        if (isCancelled) {
+            return <Ban className="h-4 w-4 text-muted-foreground/80 shrink-0" />
         }
         if (isDownloadingPhase) {
             return (
@@ -195,7 +201,7 @@ export function CompactTransferRow({
 
                         {/* Right Telemetry & Actions */}
                         <div className="flex items-center gap-2 shrink-0">
-                            {/* Live Speed / ETA Readout */}
+                            {/* Live Speed / Status / ETA Readout */}
                             {downloadSpeed && (
                                 <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-primary-100 font-medium">
                                     <ArrowDown className="h-3 w-3 text-primary" />
@@ -207,6 +213,15 @@ export function CompactTransferRow({
                                     <ArrowUp className="h-3 w-3 text-info-medium" />
                                     {uploadSpeed}
                                 </span>
+                            )}
+                            {isCompleted && (
+                                <span className="text-success-medium text-xs font-mono">Ready</span>
+                            )}
+                            {isFailed && (
+                                <span className="text-danger-light text-xs font-mono">Failed</span>
+                            )}
+                            {isCancelled && (
+                                <span className="text-muted-foreground/80 text-xs font-mono">Cancelled</span>
                             )}
                             {eta && (
                                 <span className="hidden md:inline-block text-xs font-mono text-muted-foreground/80 tabular-nums">
@@ -294,11 +309,12 @@ export function CompactTransferRow({
                     </div>
 
                     {/* Progress Pipeline & Phase Footnote */}
-                    {(isActive || isCompleted || isFailed) && (
+                    {(isActive || isCompleted || isFailed || isCancelled) && (
                         <div className="space-y-1">
                             <UnifiedProgressPipeline job={job} size="sm" />
                             <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
                                 <span className="truncate">
+                                    {isCancelled && 'Transfer cancelled'}
                                     {isDownloadingPhase && `BitTorrent DL: ${downloadPct.toFixed(0)}%`}
                                     {isUploadingPhase && `Cloud UL: ${uploadPct.toFixed(0)}%`}
                                     {isCompleted && 'Completed · Ready in Cloud'}

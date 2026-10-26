@@ -255,6 +255,7 @@ export function JobCard({
         isUploadingPhase,
         isCompleted,
         isFailed,
+        isCancelled,
         isActive,
         downloadPct,
         uploadPct,
@@ -296,11 +297,12 @@ export function JobCard({
 
     const canRetry = Boolean(job.canRetry || isFailed)
     const canForceStart = Boolean(
-        job.canForceStart ||
+        (job.canForceStart ||
             status === JobStatus.QUEUED ||
-            status === JobStatus.PENDING_UPLOAD
+            status === JobStatus.PENDING_UPLOAD) &&
+            !isCancelled
     )
-    const canCancel = Boolean(job.canCancel || isActive)
+    const canCancel = Boolean((job.canCancel || isActive) && !isCancelled)
 
     const handleCopyHash = (e: React.MouseEvent) => {
         e.preventDefault()
@@ -311,7 +313,7 @@ export function JobCard({
         })
     }
 
-    const showPipeline = isActive || isCompleted || isFailed
+    const showPipeline = isActive || isCompleted || isFailed || isCancelled
 
     return (
         <TooltipProvider delayDuration={200}>
@@ -698,4 +700,3 @@ export function JobList({
         </Card>
     )
 }
-

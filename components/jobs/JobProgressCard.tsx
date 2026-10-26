@@ -23,6 +23,7 @@ export function JobProgressCard({ job, className }: JobProgressCardProps) {
         isPastDownloadPhase,
         isCompleted,
         isFailed,
+        isCancelled,
         isDownloadFailed,
         isUploadFailed,
         isActive,
@@ -36,23 +37,27 @@ export function JobProgressCard({ job, className }: JobProgressCardProps) {
 
     const isS3 = job.storageProviderType?.toLowerCase() === 's3' || job.storageProfileName?.toLowerCase().includes('s3')
 
-    const downloadState = isCompleted || isPastDownloadPhase
-        ? { label: 'Completed', color: 'text-success-medium', bg: 'bg-success/10' }
-        : isDownloadFailed
-          ? { label: 'Download Failed', color: 'text-danger-light', bg: 'bg-danger/10' }
-          : isDownloadingPhase
-            ? { label: 'In Progress', color: 'text-primary-100', bg: 'bg-primary/10' }
-            : { label: 'Queued', color: 'text-muted-foreground', bg: 'bg-surface-400/50' }
+    const downloadState = isCancelled
+        ? { label: 'Cancelled', color: 'text-muted-foreground', bg: 'bg-surface-400/40' }
+        : isCompleted || isPastDownloadPhase
+          ? { label: 'Completed', color: 'text-success-medium', bg: 'bg-success/10' }
+          : isDownloadFailed
+            ? { label: 'Download Failed', color: 'text-danger-light', bg: 'bg-danger/10' }
+            : isDownloadingPhase
+              ? { label: 'In Progress', color: 'text-primary-100', bg: 'bg-primary/10' }
+              : { label: 'Queued', color: 'text-muted-foreground', bg: 'bg-surface-400/50' }
 
-    const uploadState = isCompleted
-        ? { label: 'Delivered', color: 'text-success-medium', bg: 'bg-success/10' }
-        : isUploadFailed
-          ? { label: 'Upload Failed', color: 'text-danger-light', bg: 'bg-danger/10' }
-          : isUploadingPhase
-            ? { label: 'Uploading', color: 'text-info-light', bg: 'bg-info/10' }
-            : status === JobStatus.PENDING_UPLOAD
-              ? { label: 'Awaiting Worker', color: 'text-warning-medium', bg: 'bg-warning/10' }
-              : { label: 'Waiting for Download', color: 'text-muted-foreground', bg: 'bg-surface-400/50' }
+    const uploadState = isCancelled
+        ? { label: 'Cancelled', color: 'text-muted-foreground', bg: 'bg-surface-400/40' }
+        : isCompleted
+          ? { label: 'Delivered', color: 'text-success-medium', bg: 'bg-success/10' }
+          : isUploadFailed
+            ? { label: 'Upload Failed', color: 'text-danger-light', bg: 'bg-danger/10' }
+            : isUploadingPhase
+              ? { label: 'Uploading', color: 'text-info-light', bg: 'bg-info/10' }
+              : status === JobStatus.PENDING_UPLOAD
+                ? { label: 'Awaiting Worker', color: 'text-warning-medium', bg: 'bg-warning/10' }
+                : { label: 'Waiting for Download', color: 'text-muted-foreground', bg: 'bg-surface-400/50' }
 
     return (
         <Card className={cn('rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs overflow-hidden', className)}>

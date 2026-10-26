@@ -6,6 +6,7 @@ import {
     XCircle,
     RefreshCcw,
     AlertCircle,
+    Ban,
 } from 'lucide-react'
 import { JobStatus } from '@/types/enums'
 import { ReactNode } from 'react'
@@ -85,7 +86,7 @@ export const jobStatusConfig: Record<JobStatus, JobStatusConfigItem> = {
         color: 'text-danger-medium',
     },
     [JobStatus.CANCELLED]: {
-        icon: <XCircle className="h-6 w-6" />,
+        icon: <Ban className="h-6 w-6" />,
         badgeVariant: 'secondary',
         label: 'Cancelled',
         color: 'text-muted-foreground',
