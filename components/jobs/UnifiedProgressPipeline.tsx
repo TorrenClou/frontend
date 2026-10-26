@@ -50,7 +50,7 @@ export function UnifiedProgressPipeline({
                 aria-valuemin={0}
                 aria-valuemax={100}
             >
-                {/* Stage 1: BitTorrent Download Segment */}
+                {/* Stage 1: BitTorrent Download Segment (Electric Sky) */}
                 <div
                     className="relative h-full w-full rounded-full bg-surface-300/40 overflow-hidden"
                     title={`BitTorrent Phase: ${downloadPct.toFixed(1)}%${isCancelled ? ' (Cancelled)' : ''}`}
@@ -59,20 +59,20 @@ export function UnifiedProgressPipeline({
                         className={cn(
                             'h-full w-full rounded-full transition-transform duration-300 ease-out-quint',
                             isCancelled
-                                ? 'bg-muted-foreground/35'
+                                ? 'bg-zinc-600/40'
                                 : isDownloadFailed
-                                  ? 'bg-danger'
+                                  ? 'bg-rose-500'
                                   : isCompleted || isPastDownloadPhase
-                                    ? 'bg-primary-300'
+                                    ? 'bg-sky-500/75'
                                     : dlActive
-                                      ? 'bg-primary'
-                                      : 'bg-primary/50'
+                                      ? 'bg-sky-500'
+                                      : 'bg-sky-500/35'
                         )}
                         style={{ transform: `translateX(-${100 - downloadPct}%)` }}
                     />
                 </div>
 
-                {/* Stage 2: Cloud Upload Segment */}
+                {/* Stage 2: Cloud Upload Segment (Vibrant Violet -> Emerald Green on completion) */}
                 <div
                     className="relative h-full w-full rounded-full bg-surface-300/40 overflow-hidden"
                     title={`Cloud Upload Phase: ${uploadPct.toFixed(1)}%${isCancelled ? ' (Cancelled)' : ''}`}
@@ -81,13 +81,13 @@ export function UnifiedProgressPipeline({
                         className={cn(
                             'h-full w-full rounded-full transition-transform duration-300 ease-out-quint',
                             isCancelled
-                                ? 'bg-muted-foreground/25'
+                                ? 'bg-zinc-600/30'
                                 : isUploadFailed
-                                  ? 'bg-danger'
+                                  ? 'bg-rose-500'
                                   : isCompleted
-                                    ? 'bg-success'
+                                    ? 'bg-emerald-500'
                                     : ulActive
-                                      ? 'bg-info-medium'
+                                      ? 'bg-violet-500'
                                       : 'bg-surface-300/60'
                         )}
                         style={{ transform: `translateX(-${100 - uploadPct}%)` }}
@@ -103,12 +103,14 @@ export function UnifiedProgressPipeline({
                             className={cn(
                                 'inline-block h-1.5 w-1.5 rounded-full',
                                 isCancelled
-                                    ? 'bg-muted-foreground/40'
+                                    ? 'bg-zinc-500'
                                     : dlActive
-                                      ? 'bg-primary animate-pulse'
+                                      ? 'bg-sky-400 animate-pulse'
                                       : isDownloadFailed
-                                        ? 'bg-danger'
-                                        : 'bg-muted-foreground/60'
+                                        ? 'bg-rose-400'
+                                        : isCompleted || isPastDownloadPhase
+                                          ? 'bg-sky-400/80'
+                                          : 'bg-muted-foreground/60'
                             )}
                         />
                         <span>BitTorrent: {downloadPct.toFixed(0)}%</span>
@@ -118,13 +120,13 @@ export function UnifiedProgressPipeline({
                             className={cn(
                                 'inline-block h-1.5 w-1.5 rounded-full',
                                 isCancelled
-                                    ? 'bg-muted-foreground/40'
+                                    ? 'bg-zinc-500'
                                     : ulActive
-                                      ? 'bg-info-medium animate-pulse'
+                                      ? 'bg-violet-400 animate-pulse'
                                       : isUploadFailed
-                                        ? 'bg-danger'
+                                        ? 'bg-rose-400'
                                         : isCompleted
-                                          ? 'bg-success'
+                                          ? 'bg-emerald-400'
                                           : 'bg-muted-foreground/60'
                             )}
                         />

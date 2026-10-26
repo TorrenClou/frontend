@@ -48,9 +48,9 @@ export function JobErrorCard({
     const showDriveRetry = job.canRetry && onRetryWithProfile && alternatives.length > 0
 
     return (
-        <Card className="border-danger/40 bg-danger/5">
+        <Card className="border-rose-500/30 bg-rose-500/5">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-danger-medium">
+                <CardTitle className="flex items-center gap-2 text-rose-400">
                     <AlertCircle className="h-5 w-5" />
                     Transfer Failed
                 </CardTitle>

@@ -76,97 +76,97 @@ const statusConfig: Record<
         icon: <Clock className="h-4 w-4" />,
         badgeVariant: 'pending',
         label: 'Queued',
-        color: 'text-warning-medium',
-        bgColor: 'bg-warning/10',
-        accentBar: 'bg-warning',
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        accentBar: 'bg-amber-400',
     },
     [JobStatus.DOWNLOADING]: {
         icon: <Download className="h-4 w-4" />,
         badgeVariant: 'processing',
         label: 'Downloading',
-        color: 'text-primary-100',
-        bgColor: 'bg-primary/10',
-        accentBar: 'bg-primary',
+        color: 'text-sky-400',
+        bgColor: 'bg-sky-500/10',
+        accentBar: 'bg-sky-500',
     },
     [JobStatus.PENDING_UPLOAD]: {
         icon: <Clock className="h-4 w-4" />,
         badgeVariant: 'pending',
         label: 'Pending Upload',
-        color: 'text-warning-medium',
-        bgColor: 'bg-warning/10',
-        accentBar: 'bg-warning',
+        color: 'text-amber-300',
+        bgColor: 'bg-amber-500/10',
+        accentBar: 'bg-amber-400',
     },
     [JobStatus.UPLOADING]: {
         icon: <Upload className="h-4 w-4" />,
         badgeVariant: 'info',
         label: 'Uploading',
-        color: 'text-info-light',
-        bgColor: 'bg-info/10',
-        accentBar: 'bg-info-medium',
+        color: 'text-violet-400',
+        bgColor: 'bg-violet-500/10',
+        accentBar: 'bg-violet-500',
     },
     [JobStatus.TORRENT_DOWNLOAD_RETRY]: {
         icon: <RefreshCw className="h-4 w-4 animate-spin" />,
         badgeVariant: 'warning',
         label: 'Retrying Download',
-        color: 'text-warning-medium',
-        bgColor: 'bg-warning/10',
-        accentBar: 'bg-warning',
+        color: 'text-orange-400',
+        bgColor: 'bg-orange-500/10',
+        accentBar: 'bg-orange-500',
     },
     [JobStatus.UPLOAD_RETRY]: {
         icon: <RefreshCw className="h-4 w-4 animate-spin" />,
         badgeVariant: 'warning',
         label: 'Retrying Upload',
-        color: 'text-warning-medium',
-        bgColor: 'bg-warning/10',
-        accentBar: 'bg-warning',
+        color: 'text-orange-400',
+        bgColor: 'bg-orange-500/10',
+        accentBar: 'bg-orange-500',
     },
     [JobStatus.COMPLETED]: {
         icon: <CheckCircle className="h-4 w-4" />,
         badgeVariant: 'success',
         label: 'Completed',
-        color: 'text-success-medium',
-        bgColor: 'bg-success/10',
-        accentBar: 'bg-success',
+        color: 'text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
+        accentBar: 'bg-emerald-500',
     },
     [JobStatus.FAILED]: {
         icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Failed',
-        color: 'text-danger-light',
-        bgColor: 'bg-danger/10',
-        accentBar: 'bg-danger',
+        color: 'text-rose-400',
+        bgColor: 'bg-rose-500/10',
+        accentBar: 'bg-rose-500',
     },
     [JobStatus.TORRENT_FAILED]: {
         icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Download Failed',
-        color: 'text-danger-light',
-        bgColor: 'bg-danger/10',
-        accentBar: 'bg-danger',
+        color: 'text-rose-400',
+        bgColor: 'bg-rose-500/10',
+        accentBar: 'bg-rose-500',
     },
     [JobStatus.UPLOAD_FAILED]: {
         icon: <XCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Upload Failed',
-        color: 'text-danger-light',
-        bgColor: 'bg-danger/10',
-        accentBar: 'bg-danger',
+        color: 'text-rose-400',
+        bgColor: 'bg-rose-500/10',
+        accentBar: 'bg-rose-500',
     },
     [JobStatus.GOOGLE_DRIVE_FAILED]: {
         icon: <AlertCircle className="h-4 w-4" />,
         badgeVariant: 'destructive',
         label: 'Drive Upload Failed',
-        color: 'text-danger-light',
-        bgColor: 'bg-danger/10',
-        accentBar: 'bg-danger',
+        color: 'text-rose-400',
+        bgColor: 'bg-rose-500/10',
+        accentBar: 'bg-rose-500',
     },
     [JobStatus.CANCELLED]: {
         icon: <Ban className="h-4 w-4" />,
         badgeVariant: 'secondary',
         label: 'Cancelled',
-        color: 'text-surface-100',
-        bgColor: 'bg-surface-400/40',
-        accentBar: 'bg-surface-300',
+        color: 'text-zinc-400',
+        bgColor: 'bg-zinc-500/10',
+        accentBar: 'bg-zinc-600',
     },
 }
 
@@ -195,15 +195,15 @@ function inferMediaCategory(job: Job): string {
 function getCategoryMeta(category: string): { icon: React.ReactNode; label: string } {
     switch (category) {
         case 'video':
-            return { icon: <Film className="h-3 w-3 text-primary-200" />, label: 'Video' }
+            return { icon: <Film className="h-3 w-3 text-sky-400" />, label: 'Video' }
         case 'audio':
-            return { icon: <Music className="h-3 w-3 text-info-light" />, label: 'Audio' }
+            return { icon: <Music className="h-3 w-3 text-violet-400" />, label: 'Audio' }
         case 'archive':
-            return { icon: <Archive className="h-3 w-3 text-warning-medium" />, label: 'Archive' }
+            return { icon: <Archive className="h-3 w-3 text-amber-400" />, label: 'Archive' }
         case 'document':
-            return { icon: <FileText className="h-3 w-3 text-success-medium" />, label: 'Document' }
+            return { icon: <FileText className="h-3 w-3 text-emerald-400" />, label: 'Document' }
         case 'software':
-            return { icon: <Package className="h-3 w-3 text-primary-100" />, label: 'Software' }
+            return { icon: <Package className="h-3 w-3 text-sky-400" />, label: 'Software' }
         default:
             return { icon: <File className="h-3 w-3 text-muted-foreground" />, label: 'Torrent' }
     }
@@ -321,7 +321,9 @@ export function JobCard({
                 className={cn(
                     'group relative rounded-xl border border-surface-300/50 bg-surface-500/70 backdrop-blur-xs transition-[background-color,border-color] duration-150',
                     'hover:border-surface-200/70 hover:bg-surface-400/35',
-                    isActive && 'border-primary/30 bg-surface-tonal-500/40',
+                    isDownloadingPhase && 'border-sky-500/30 bg-sky-950/20',
+                    isUploadingPhase && 'border-violet-500/30 bg-violet-950/20',
+                    status === JobStatus.QUEUED && 'border-amber-500/20 bg-amber-950/10',
                     selected && 'ring-1 ring-primary border-primary/60 bg-primary/[0.04]',
                     className
                 )}
@@ -400,7 +402,7 @@ export function JobCard({
                                                 className={cn(
                                                     'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-mono tabular-nums',
                                                     isSelective
-                                                        ? 'bg-info/10 text-info-light border border-info/25'
+                                                        ? 'bg-violet-500/10 text-violet-400 border border-violet-500/25'
                                                         : 'bg-surface-400/40 text-muted-foreground'
                                                 )}
                                                 title={
@@ -419,9 +421,9 @@ export function JobCard({
                                         {/* Storage Provider + Profile Badge */}
                                         <span className="inline-flex items-center gap-1 rounded bg-surface-400/40 border border-surface-300/40 px-1.5 py-0.5 text-[11px] text-foreground/80">
                                             {isS3 ? (
-                                                <Database className="h-3 w-3 text-warning-medium shrink-0" />
+                                                <Database className="h-3 w-3 text-amber-400 shrink-0" />
                                             ) : (
-                                                <Cloud className="h-3 w-3 text-primary-200 shrink-0" />
+                                                <Cloud className="h-3 w-3 text-sky-400 shrink-0" />
                                             )}
                                             <span className="text-muted-foreground">
                                                 {isS3 ? 'S3' : 'Drive'}:
@@ -450,7 +452,7 @@ export function JobCard({
                                         {job.wasRerouted && (
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <span className="inline-flex items-center gap-0.5 rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-[10px] font-semibold text-warning-light">
+                                                    <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300">
                                                         <Shuffle className="h-2.5 w-2.5" />
                                                         <span>
                                                             {job.originalStorageProfileName
@@ -469,7 +471,7 @@ export function JobCard({
 
                                         {/* Stalled Warning Badge */}
                                         {job.isStalled && (
-                                            <span className="inline-flex items-center gap-0.5 rounded border border-warning/40 bg-warning/15 px-1.5 py-0.5 text-[10px] font-semibold text-warning-light">
+                                            <span className="inline-flex items-center gap-0.5 rounded border border-orange-500/40 bg-orange-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-orange-400">
                                                 <AlertTriangle className="h-2.5 w-2.5" />
                                                 Stalled
                                             </span>
@@ -483,7 +485,7 @@ export function JobCard({
                                                 className={cn(
                                                     'inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] select-none transition-all duration-150',
                                                     copiedHash
-                                                        ? 'bg-success/15 text-success-medium'
+                                                        ? 'bg-emerald-500/15 text-emerald-400'
                                                         : 'bg-surface-400/40 hover:bg-surface-300/70 text-muted-foreground hover:text-foreground'
                                                 )}
                                                 title={`Copy InfoHash: ${job.infoHash}`}
@@ -494,7 +496,7 @@ export function JobCard({
                                                         : `${job.infoHash.slice(0, 8)}…`}
                                                 </span>
                                                 {copiedHash ? (
-                                                    <Check className="h-2.5 w-2.5 text-success-medium" />
+                                                    <Check className="h-2.5 w-2.5 text-emerald-400" />
                                                 ) : (
                                                     <Copy className="h-2.5 w-2.5 opacity-60" />
                                                 )}
@@ -581,7 +583,7 @@ export function JobCard({
                                                 e.stopPropagation()
                                                 onCancel(job.id)
                                             }}
-                                            className="h-6 px-1.5 text-xs text-muted-foreground hover:text-danger hover:bg-danger/10"
+                                            className="h-6 px-1.5 text-xs text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
                                         >
                                             {isCancelling ? (
                                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -607,21 +609,21 @@ export function JobCard({
                                     <UnifiedProgressPipeline job={job} size="sm" showSummary />
                                     <div className="flex items-center justify-between text-xs text-muted-foreground font-mono tabular-nums">
                                         <span className="flex items-center gap-2">
-                                            <span>{formatFileSize(effectiveBytesDownloaded)} DL</span>
+                                            <span className={cn(isDownloadingPhase && 'text-sky-400 font-medium')}>{formatFileSize(effectiveBytesDownloaded)} DL</span>
                                             <span>·</span>
-                                            <span>{formatFileSize(effectiveBytesUploaded)} UL</span>
+                                            <span className={cn(isUploadingPhase && 'text-violet-400 font-medium', isCompleted && 'text-emerald-400')}>{formatFileSize(effectiveBytesUploaded)} UL</span>
                                             <span>·</span>
                                             <span>Total: {formatFileSize(job.totalBytes)}</span>
                                         </span>
                                         <span className="flex items-center gap-2">
                                             {downloadSpeed && (
-                                                <span className="text-primary-100 font-medium inline-flex items-center gap-0.5">
+                                                <span className="text-sky-400 font-medium inline-flex items-center gap-0.5">
                                                     <ArrowDown className="h-3 w-3" />
                                                     {downloadSpeed}
                                                 </span>
                                             )}
                                             {uploadSpeed && (
-                                                <span className="text-info-light font-medium inline-flex items-center gap-0.5">
+                                                <span className="text-violet-400 font-medium inline-flex items-center gap-0.5">
                                                     <ArrowUp className="h-3 w-3" />
                                                     {uploadSpeed}
                                                 </span>
@@ -638,8 +640,8 @@ export function JobCard({
 
                             {/* Inline Error Footnote */}
                             {job.errorMessage && (
-                                <div className="flex items-start gap-2 rounded-lg border border-danger/25 bg-danger/10 px-2.5 py-1.5 text-xs text-danger-light">
-                                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-danger-medium" />
+                                <div className="flex items-start gap-2 rounded-lg border border-rose-500/25 bg-rose-500/10 px-2.5 py-1.5 text-xs text-rose-400">
+                                    <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-400" />
                                     <span className="line-clamp-2">{job.errorMessage}</span>
                                 </div>
                             )}

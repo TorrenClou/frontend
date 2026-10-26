@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, HardDrive } from 'lucide-react'
+import { CheckCircle2, HardDrive } from 'lucide-react'
 import Link from 'next/link'
 import type { Job } from '@/types/jobs'
 
@@ -12,10 +12,10 @@ interface JobSuccessCardProps {
 
 export function JobSuccessCard({ job }: JobSuccessCardProps) {
     return (
-        <Card className="border-success/40 bg-success/5">
+        <Card className="border-emerald-500/30 bg-emerald-500/5">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-success-medium">
-                    <CheckCircle className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-emerald-400">
+                    <CheckCircle2 className="h-5 w-5" />
                     Transfer Complete
                 </CardTitle>
                 <CardDescription>

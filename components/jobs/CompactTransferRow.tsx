@@ -123,31 +123,31 @@ export function CompactTransferRow({
     // Status dot color & pulse
     const getStatusIndicator = () => {
         if (isCompleted) {
-            return <CheckCircle2 className="h-4 w-4 text-success-medium shrink-0" />
+            return <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
         }
         if (isFailed) {
-            return <AlertCircle className="h-4 w-4 text-danger-medium shrink-0" />
+            return <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
         }
         if (isCancelled) {
-            return <Ban className="h-4 w-4 text-muted-foreground/80 shrink-0" />
+            return <Ban className="h-4 w-4 text-zinc-400 shrink-0" />
         }
         if (isDownloadingPhase) {
             return (
                 <span className="relative flex h-2.5 w-2.5 shrink-0 mx-0.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-100 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400" />
                 </span>
             )
         }
         if (isUploadingPhase) {
             return (
                 <span className="relative flex h-2.5 w-2.5 shrink-0 mx-0.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-info-light opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-info-medium" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-400" />
                 </span>
             )
         }
-        return <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+        return <Clock className="h-4 w-4 text-amber-400/80 shrink-0" />
     }
 
     return (
@@ -155,7 +155,9 @@ export function CompactTransferRow({
             <div
                 className={cn(
                     'group relative rounded-lg border border-surface-300/40 bg-surface-500/70 p-3 sm:px-4 sm:py-3 transition-[background-color,border-color] duration-150 ease-out-quart hover:border-surface-200/60 hover:bg-surface-400/35',
-                    isActive && 'border-primary/30 bg-surface-tonal-500/40',
+                    isDownloadingPhase && 'border-sky-500/30 bg-sky-950/20',
+                    isUploadingPhase && 'border-violet-500/30 bg-violet-950/20',
+                    status === JobStatus.QUEUED && 'border-amber-500/20 bg-amber-950/10',
                     className
                 )}
             >
@@ -184,9 +186,9 @@ export function CompactTransferRow({
                             {/* Storage Badge */}
                             <span className="hidden sm:inline-flex items-center gap-1 rounded bg-surface-400/50 px-1.5 py-0.5 text-[11px] text-muted-foreground shrink-0">
                                 {isS3 ? (
-                                    <Database className="h-3 w-3 text-warning-medium" />
+                                    <Database className="h-3 w-3 text-amber-400" />
                                 ) : (
-                                    <Cloud className="h-3 w-3 text-primary-200" />
+                                    <Cloud className="h-3 w-3 text-sky-400" />
                                 )}
                                 <span className="truncate max-w-[120px]">
                                     {job.storageProfileName || (isS3 ? 'S3' : 'Drive')}
@@ -203,25 +205,25 @@ export function CompactTransferRow({
                         <div className="flex items-center gap-2 shrink-0">
                             {/* Live Speed / Status / ETA Readout */}
                             {downloadSpeed && (
-                                <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-primary-100 font-medium">
-                                    <ArrowDown className="h-3 w-3 text-primary" />
+                                <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-sky-400 font-medium">
+                                    <ArrowDown className="h-3 w-3 text-sky-400" />
                                     {downloadSpeed}
                                 </span>
                             )}
                             {uploadSpeed && (
-                                <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-info-light font-medium">
-                                    <ArrowUp className="h-3 w-3 text-info-medium" />
+                                <span className="inline-flex items-center gap-1 text-xs font-mono tabular-nums text-violet-400 font-medium">
+                                    <ArrowUp className="h-3 w-3 text-violet-400" />
                                     {uploadSpeed}
                                 </span>
                             )}
                             {isCompleted && (
-                                <span className="text-success-medium text-xs font-mono">Ready</span>
+                                <span className="text-emerald-400 text-xs font-mono font-medium">Ready</span>
                             )}
                             {isFailed && (
-                                <span className="text-danger-light text-xs font-mono">Failed</span>
+                                <span className="text-rose-400 text-xs font-mono font-medium">Failed</span>
                             )}
                             {isCancelled && (
-                                <span className="text-muted-foreground/80 text-xs font-mono">Cancelled</span>
+                                <span className="text-zinc-400 text-xs font-mono">Cancelled</span>
                             )}
                             {eta && (
                                 <span className="hidden md:inline-block text-xs font-mono text-muted-foreground/80 tabular-nums">
@@ -286,7 +288,7 @@ export function CompactTransferRow({
                                             e.stopPropagation()
                                             onCancel(job.id)
                                         }}
-                                        className="h-6 px-1.5 text-xs text-muted-foreground hover:text-danger hover:bg-danger/10"
+                                        className="h-6 px-1.5 text-xs text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
                                         title="Cancel job"
                                     >
                                         {isCancelling ? (
@@ -315,12 +317,24 @@ export function CompactTransferRow({
                             <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
                                 <span className="truncate">
                                     {isCancelled && 'Transfer cancelled'}
-                                    {isDownloadingPhase && `BitTorrent DL: ${downloadPct.toFixed(0)}%`}
-                                    {isUploadingPhase && `Cloud UL: ${uploadPct.toFixed(0)}%`}
-                                    {isCompleted && 'Completed · Ready in Cloud'}
-                                    {isFailed && (job.errorMessage || 'Transfer halted')}
-                                    {status === JobStatus.QUEUED && 'Queued in transfer queue'}
-                                    {status === JobStatus.PENDING_UPLOAD && 'Awaiting upload worker'}
+                                    {isDownloadingPhase && (
+                                        <span className="text-sky-400">BitTorrent DL: {downloadPct.toFixed(0)}%</span>
+                                    )}
+                                    {isUploadingPhase && (
+                                        <span className="text-violet-400">Cloud UL: {uploadPct.toFixed(0)}%</span>
+                                    )}
+                                    {isCompleted && (
+                                        <span className="text-emerald-400">Completed · Ready in Cloud</span>
+                                    )}
+                                    {isFailed && (
+                                        <span className="text-rose-400">{job.errorMessage || 'Transfer halted'}</span>
+                                    )}
+                                    {status === JobStatus.QUEUED && (
+                                        <span className="text-amber-400/80">Queued in transfer queue</span>
+                                    )}
+                                    {status === JobStatus.PENDING_UPLOAD && (
+                                        <span className="text-amber-300">Awaiting upload worker</span>
+                                    )}
                                 </span>
                                 <span className="text-muted-foreground/60 shrink-0">
                                     {formatRelativeTime(job.createdAt || new Date().toISOString())}

@@ -17,6 +17,7 @@ import {
     Upload,
     ChevronLeft,
     ChevronRight,
+    Ban,
 } from 'lucide-react'
 import { useJobTimeline } from '@/hooks/useJobs'
 import { JobStatus } from '@/types/enums'
@@ -31,18 +32,18 @@ import {
 } from '@/components/ui/tooltip'
 
 const statusColors: Record<JobStatus, { bg: string; text: string; border: string }> = {
-    [JobStatus.QUEUED]: { bg: 'bg-warning/20', text: 'text-warning-medium', border: 'border-warning/60' },
-    [JobStatus.DOWNLOADING]: { bg: 'bg-info/20', text: 'text-info-medium', border: 'border-info/60' },
-    [JobStatus.PENDING_UPLOAD]: { bg: 'bg-warning/20', text: 'text-warning-medium', border: 'border-warning/60' },
-    [JobStatus.UPLOADING]: { bg: 'bg-info/20', text: 'text-info-medium', border: 'border-info/60' },
-    [JobStatus.TORRENT_DOWNLOAD_RETRY]: { bg: 'bg-warning/20', text: 'text-warning-medium', border: 'border-warning/60' },
-    [JobStatus.UPLOAD_RETRY]: { bg: 'bg-warning/20', text: 'text-warning-medium', border: 'border-warning/60' },
-    [JobStatus.COMPLETED]: { bg: 'bg-success/20', text: 'text-success-medium', border: 'border-success/60' },
-    [JobStatus.FAILED]: { bg: 'bg-danger/20', text: 'text-danger-medium', border: 'border-danger/60' },
-    [JobStatus.CANCELLED]: { bg: 'bg-surface-300', text: 'text-muted-foreground', border: 'border-surface-200' },
-    [JobStatus.TORRENT_FAILED]: { bg: 'bg-danger/20', text: 'text-danger-medium', border: 'border-danger/60' },
-    [JobStatus.UPLOAD_FAILED]: { bg: 'bg-danger/20', text: 'text-danger-medium', border: 'border-danger/60' },
-    [JobStatus.GOOGLE_DRIVE_FAILED]: { bg: 'bg-danger/20', text: 'text-danger-medium', border: 'border-danger/60' },
+    [JobStatus.QUEUED]: { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/40' },
+    [JobStatus.DOWNLOADING]: { bg: 'bg-sky-500/15', text: 'text-sky-400', border: 'border-sky-500/40' },
+    [JobStatus.PENDING_UPLOAD]: { bg: 'bg-amber-500/15', text: 'text-amber-300', border: 'border-amber-500/40' },
+    [JobStatus.UPLOADING]: { bg: 'bg-violet-500/15', text: 'text-violet-400', border: 'border-violet-500/40' },
+    [JobStatus.TORRENT_DOWNLOAD_RETRY]: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/40' },
+    [JobStatus.UPLOAD_RETRY]: { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/40' },
+    [JobStatus.COMPLETED]: { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/40' },
+    [JobStatus.FAILED]: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/40' },
+    [JobStatus.CANCELLED]: { bg: 'bg-zinc-500/15', text: 'text-zinc-400', border: 'border-zinc-500/40' },
+    [JobStatus.TORRENT_FAILED]: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/40' },
+    [JobStatus.UPLOAD_FAILED]: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/40' },
+    [JobStatus.GOOGLE_DRIVE_FAILED]: { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/40' },
 }
 
 const statusIcons: Record<JobStatus, React.ReactNode> = {
@@ -54,7 +55,7 @@ const statusIcons: Record<JobStatus, React.ReactNode> = {
     [JobStatus.UPLOAD_RETRY]: <RefreshCw className="h-3.5 w-3.5" />,
     [JobStatus.COMPLETED]: <CheckCircle className="h-3.5 w-3.5" />,
     [JobStatus.FAILED]: <XCircle className="h-3.5 w-3.5" />,
-    [JobStatus.CANCELLED]: <XCircle className="h-3.5 w-3.5" />,
+    [JobStatus.CANCELLED]: <Ban className="h-3.5 w-3.5" />,
     [JobStatus.TORRENT_FAILED]: <XCircle className="h-3.5 w-3.5" />,
     [JobStatus.UPLOAD_FAILED]: <XCircle className="h-3.5 w-3.5" />,
     [JobStatus.GOOGLE_DRIVE_FAILED]: <AlertCircle className="h-3.5 w-3.5" />,
@@ -222,10 +223,10 @@ export function JobTimeline({ jobId }: JobTimelineProps) {
                                         </div>
 
                                         {isError && entry.errorMessage && (
-                                            <div className="mt-2 p-2.5 rounded-md bg-danger/10 border border-danger/30">
+                                            <div className="mt-2 p-2.5 rounded-md bg-rose-500/10 border border-rose-500/30">
                                                 <div className="flex items-start gap-2">
-                                                    <AlertCircle className="h-4 w-4 text-danger-medium shrink-0 mt-0.5" />
-                                                    <p className="text-xs text-danger-light">{entry.errorMessage}</p>
+                                                    <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                                                    <p className="text-xs text-rose-400">{entry.errorMessage}</p>
                                                 </div>
                                             </div>
                                         )}

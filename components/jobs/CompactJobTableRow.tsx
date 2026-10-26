@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { JobStatus } from '@/types/enums'
 import type { Job } from '@/types/jobs'
 import { getJobPhaseProgress } from '@/lib/utils/job-progress'
-import { formatFileSize, formatRelativeTime } from '@/lib/utils/formatters'
+import { formatFileSize } from '@/lib/utils/formatters'
 import { UnifiedProgressPipeline } from './UnifiedProgressPipeline'
 import { Button } from '@/components/ui/button'
 import {
@@ -131,31 +131,31 @@ export function CompactJobTableRow({
 
     const getStatusDot = () => {
         if (isCompleted) {
-            return <CheckCircle2 className="h-4 w-4 text-success-medium shrink-0" />
+            return <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
         }
         if (isFailed) {
-            return <AlertCircle className="h-4 w-4 text-danger-medium shrink-0" />
+            return <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
         }
         if (isCancelled) {
-            return <Ban className="h-4 w-4 text-muted-foreground/80 shrink-0" />
+            return <Ban className="h-4 w-4 text-zinc-400 shrink-0" />
         }
         if (isDownloadingPhase) {
             return (
                 <span className="relative flex h-2.5 w-2.5 shrink-0 mx-0.5" title="Downloading from peers">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-100 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400" />
                 </span>
             )
         }
         if (isUploadingPhase) {
             return (
                 <span className="relative flex h-2.5 w-2.5 shrink-0 mx-0.5" title="Uploading to cloud storage">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-info-light opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-info-medium" />
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-400" />
                 </span>
             )
         }
-        return <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+        return <Clock className="h-4 w-4 text-amber-400/80 shrink-0" />
     }
 
     return (
@@ -164,7 +164,9 @@ export function CompactJobTableRow({
                 className={cn(
                     'group flex items-center justify-between gap-3 rounded-lg border border-surface-300/40 bg-surface-500/60 px-3 py-2.5 transition-[background-color,border-color] duration-150',
                     'hover:border-surface-200/60 hover:bg-surface-400/35',
-                    isActive && 'border-primary/30 bg-surface-tonal-500/30',
+                    isDownloadingPhase && 'border-sky-500/30 bg-sky-950/20',
+                    isUploadingPhase && 'border-violet-500/30 bg-violet-950/20',
+                    status === JobStatus.QUEUED && 'border-amber-500/20 bg-amber-950/10',
                     selected && 'ring-1 ring-primary border-primary/50 bg-primary/[0.04]',
                     className
                 )}
@@ -211,19 +213,19 @@ export function CompactJobTableRow({
                             <span title="Pinned to profile"><Pin className="h-3 w-3 text-primary-100 shrink-0" /></span>
                         )}
                         {job.wasRerouted && (
-                            <span title="Failover rerouted"><Shuffle className="h-3 w-3 text-warning-light shrink-0" /></span>
+                            <span title="Failover rerouted"><Shuffle className="h-3 w-3 text-amber-300 shrink-0" /></span>
                         )}
                         {job.isStalled && (
-                            <span title="Transfer stalled"><AlertTriangle className="h-3 w-3 text-warning-medium shrink-0" /></span>
+                            <span title="Transfer stalled"><AlertTriangle className="h-3 w-3 text-orange-400 shrink-0" /></span>
                         )}
                     </div>
 
                     {/* Storage Profile Pill */}
                     <span className="hidden md:inline-flex items-center gap-1 rounded bg-surface-400/40 px-1.5 py-0.5 text-[10px] text-muted-foreground shrink-0">
                         {isS3 ? (
-                            <Database className="h-2.5 w-2.5 text-warning-medium" />
+                            <Database className="h-2.5 w-2.5 text-amber-400" />
                         ) : (
-                            <Cloud className="h-2.5 w-2.5 text-primary-200" />
+                            <Cloud className="h-2.5 w-2.5 text-sky-400" />
                         )}
                         <span className="truncate max-w-[100px]">
                             {job.storageProfileName || (isS3 ? 'S3' : 'Drive')}
@@ -240,8 +242,8 @@ export function CompactJobTableRow({
                 <div className="hidden lg:flex w-44 shrink-0 flex-col gap-1">
                     <UnifiedProgressPipeline job={job} size="sm" />
                     <div className="flex justify-between text-[10px] font-mono text-muted-foreground/80 tabular-nums">
-                        <span>DL {downloadPct.toFixed(0)}%</span>
-                        <span>UL {uploadPct.toFixed(0)}%</span>
+                        <span className={cn(isDownloadingPhase && 'text-sky-400 font-semibold')}>DL {downloadPct.toFixed(0)}%</span>
+                        <span className={cn(isUploadingPhase && 'text-violet-400 font-semibold', isCompleted && 'text-emerald-400')}>UL {uploadPct.toFixed(0)}%</span>
                     </div>
                 </div>
 
@@ -250,23 +252,23 @@ export function CompactJobTableRow({
                     {/* Live Speed / ETA Readout */}
                     <div className="text-right font-mono text-xs tabular-nums min-w-[70px] sm:min-w-[90px]">
                         {downloadSpeed ? (
-                            <span className="inline-flex items-center gap-0.5 text-primary-100 font-medium">
+                            <span className="inline-flex items-center gap-0.5 text-sky-400 font-medium">
                                 <ArrowDown className="h-3 w-3" />
                                 {downloadSpeed}
                             </span>
                         ) : uploadSpeed ? (
-                            <span className="inline-flex items-center gap-0.5 text-info-light font-medium">
+                            <span className="inline-flex items-center gap-0.5 text-violet-400 font-medium">
                                 <ArrowUp className="h-3 w-3" />
                                 {uploadSpeed}
                             </span>
                         ) : isCompleted ? (
-                            <span className="text-success-medium text-[11px]">Ready</span>
+                            <span className="text-emerald-400 text-[11px] font-medium">Ready</span>
                         ) : isFailed ? (
-                            <span className="text-danger-light text-[11px]">Failed</span>
+                            <span className="text-rose-400 text-[11px] font-medium">Failed</span>
                         ) : isCancelled ? (
-                            <span className="text-muted-foreground/80 text-[11px]">Cancelled</span>
+                            <span className="text-zinc-400 text-[11px]">Cancelled</span>
                         ) : (
-                            <span className="text-muted-foreground/60 text-[11px]">
+                            <span className="text-amber-400/80 text-[11px]">
                                 {status === JobStatus.QUEUED ? 'Queued' : 'Waiting'}
                             </span>
                         )}
@@ -334,7 +336,7 @@ export function CompactJobTableRow({
                                     e.stopPropagation()
                                     onCancel(job.id)
                                 }}
-                                className="h-6 w-6 p-0 text-muted-foreground hover:text-danger hover:bg-danger/10"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10"
                                 title="Cancel job"
                             >
                                 {isCancelling ? (
