@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.4] - 2026-10-26
+
+* Fix OAuth popup callback handling (aa0df37)
+
 ## [2.6.3] - 2026-10-26
 
 * fix(layout): restore locked 100dvh viewport shell and eliminate double document scrollbar (f3917cb)
