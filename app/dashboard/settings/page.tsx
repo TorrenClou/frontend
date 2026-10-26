@@ -23,6 +23,7 @@ import {
 } from '@/hooks/useSettings'
 import { AccountCard } from '@/components/settings/AccountCard'
 import { TransfersCard } from '@/components/settings/TransfersCard'
+import { VersionCard } from '@/components/settings/VersionCard'
 
 export default function SettingsPage() {
     const { data: settings, isLoading: settingsLoading } = useUserSettings()
@@ -49,9 +50,11 @@ export default function SettingsPage() {
             <div>
                 <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
                 <p className="text-muted-foreground">
-                    Manage your account settings and storage
+                    Manage your account settings, storage, and instance version
                 </p>
             </div>
+
+            <VersionCard />
 
             <AccountCard />
 
@@ -142,37 +145,37 @@ export default function SettingsPage() {
                         <>
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="rounded-lg border border-border bg-background/40 p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    <p className="text-xs font-medium text-muted-foreground">
                                         Can be freed
                                     </p>
-                                    <p className="mt-1 font-mono text-2xl font-bold text-primary">
+                                    <p className="mt-1 font-mono tabular-nums text-2xl font-bold text-primary">
                                         {formatFileSize(storage?.purgeableBytes ?? 0)}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground tabular-nums">
                                         {storage?.purgeableCount ?? 0} completed or cancelled
                                     </p>
                                 </div>
 
                                 <div className="rounded-lg border border-border bg-background/40 p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    <p className="text-xs font-medium text-muted-foreground">
                                         In use
                                     </p>
-                                    <p className="mt-1 font-mono text-2xl font-bold">
+                                    <p className="mt-1 font-mono tabular-nums text-2xl font-bold">
                                         {formatFileSize(storage?.retainedBytes ?? 0)}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground tabular-nums">
                                         {storage?.retainedCount ?? 0} active, retrying or failed
                                     </p>
                                 </div>
 
                                 <div className="rounded-lg border border-border bg-background/40 p-3">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    <p className="text-xs font-medium text-muted-foreground">
                                         Unrecognised
                                     </p>
-                                    <p className="mt-1 font-mono text-2xl font-bold text-muted-foreground">
+                                    <p className="mt-1 font-mono tabular-nums text-2xl font-bold text-muted-foreground">
                                         {formatFileSize(storage?.orphanedBytes ?? 0)}
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground tabular-nums">
                                         {storage?.orphanedCount ?? 0} with no matching job
                                     </p>
                                 </div>
@@ -201,14 +204,14 @@ export default function SettingsPage() {
                                                 <p className="truncate text-sm">
                                                     {entry.torrentName ?? `Job #${entry.jobId ?? entry.directoryName}`}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-muted-foreground tabular-nums">
                                                     Job #{entry.jobId}
                                                 </p>
                                             </div>
                                             <Badge variant="outline" className="shrink-0 text-xs">
                                                 {entry.jobStatus}
                                             </Badge>
-                                            <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                                            <span className="shrink-0 font-mono tabular-nums text-xs text-muted-foreground">
                                                 {formatFileSize(entry.sizeBytes)}
                                             </span>
                                         </li>
