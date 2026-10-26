@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.0] - 2026-10-26
+
+* feat(ui): add instance versioning and check-for-updates in web dashboard (a2a593f)
+
 ## [2.5.0] - 2026-10-26
 
 * feat(ui): add damped progress physics, tabular telemetry, and tactile micro-interactions (8d1e265)
