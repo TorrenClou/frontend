@@ -28,9 +28,9 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
 
     // Sanitize progressPercentage to guard against NaN / undefined at runtime
     const rawDownloadPct = Number(job.progressPercentage)
-    const safeDownloadPct = Number.isFinite(rawDownloadPct) ? rawDownloadPct : 0
+    const safeDownloadPct = Number.isFinite(rawDownloadPct) ? Math.min(100, Math.max(0, rawDownloadPct)) : 0
     const rawUploadPct = Number(job.uploadProgressPercentage)
-    const safeUploadPct = Number.isFinite(rawUploadPct) ? rawUploadPct : 0
+    const safeUploadPct = Number.isFinite(rawUploadPct) ? Math.min(100, Math.max(0, rawUploadPct)) : 0
 
     const downloadPct = isCompleted || isPastDownload ? 100 : isDownloading ? safeDownloadPct : 0
     const uploadPct = isCompleted ? 100 : isUploading ? safeUploadPct : 0
@@ -48,7 +48,7 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
             {/* Download card */}
             <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
                 <div className="absolute top-3 right-3 opacity-[0.07] pointer-events-none">
-                    <Download className="h-16 w-16" />
+                    <Download className="h-16 w-16" aria-hidden="true" />
                 </div>
                 <div className="relative flex flex-col gap-4">
                     <div className="flex items-end justify-between">
@@ -68,11 +68,11 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         </p>
                     </div>
 
-                    {/* Progress bar */}
+                    {/* Progress bar (compositor-only transform) */}
                     <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-primary rounded-full transition-[width] duration-500 ease-out-quint"
-                            style={{ width: `${downloadPct}%` }}
+                            className="h-full w-full bg-primary rounded-full transition-transform duration-500 ease-out-quint"
+                            style={{ transform: `translateX(-${100 - downloadPct}%)` }}
                         />
                     </div>
 
@@ -82,7 +82,7 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         </span>
                         {downloadSpeed && (
                             <span className="flex items-center gap-1 text-primary">
-                                <Gauge className="h-3.5 w-3.5" />
+                                <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
                                 {downloadSpeed}
                             </span>
                         )}
@@ -93,7 +93,7 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
             {/* Upload card */}
             <div className="bg-card border border-border rounded-xl p-6 relative overflow-hidden">
                 <div className="absolute top-3 right-3 opacity-[0.07] pointer-events-none">
-                    <Upload className="h-16 w-16" />
+                    <Upload className="h-16 w-16" aria-hidden="true" />
                 </div>
                 <div className="relative flex flex-col gap-4">
                     <div className="flex items-end justify-between">
@@ -113,14 +113,14 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         </p>
                     </div>
 
-                    {/* Progress bar */}
+                    {/* Progress bar (compositor-only transform) */}
                     <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                         <div
                             className={cn(
-                                'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint relative',
+                                'h-full w-full rounded-full transition-[transform,background-color] duration-500 ease-out-quint relative',
                                 uploadPct === 100 ? 'bg-primary' : 'bg-info-medium'
                             )}
-                            style={{ width: `${uploadPct}%` }}
+                            style={{ transform: `translateX(-${100 - uploadPct}%)` }}
                         />
                     </div>
 
@@ -130,7 +130,7 @@ export function JobProgressCard({ job }: JobProgressCardProps) {
                         </span>
                         {uploadSpeed && (
                             <span className="flex items-center gap-1 text-info-medium">
-                                <Gauge className="h-3.5 w-3.5" />
+                                <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
                                 {uploadSpeed}
                             </span>
                         )}

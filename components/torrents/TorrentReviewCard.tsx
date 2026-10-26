@@ -136,7 +136,7 @@ export function TorrentReviewCard({
 
                 <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{analysis.fileName}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground tabular-nums">
                         {item.selectedFilePaths.length}/{analysis.files.length} files ·{' '}
                         {formatFileSize(selectedSize)}
                         {item.selectedFilePaths.length === 0 && ' · nothing selected'}
@@ -144,7 +144,7 @@ export function TorrentReviewCard({
                 </div>
 
                 <span
-                    className={cn('shrink-0 font-mono text-sm font-bold', getHealthColor(health.healthScore))}
+                    className={cn('shrink-0 font-mono text-sm font-bold tabular-nums', getHealthColor(health.healthScore))}
                     title={`${health.seeders} seeders · ${health.leechers} leechers`}
                 >
                     {health.healthScore}%
@@ -223,7 +223,7 @@ export function TorrentReviewCard({
                             )}
                         </button>
                         <span className="text-xs text-muted-foreground">·</span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground tabular-nums">
                             {formatFileSize(analysis.totalSizeInBytes)} total
                         </span>
                     </div>
@@ -233,7 +233,7 @@ export function TorrentReviewCard({
                             <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 <Activity className="h-3.5 w-3.5" /> Health
                             </span>
-                            <span className={cn('font-mono text-lg font-bold', getHealthColor(health.healthScore))}>
+                            <span className={cn('font-mono text-lg font-bold tabular-nums', getHealthColor(health.healthScore))}>
                                 {health.healthScore}%
                             </span>
                         </div>
@@ -241,7 +241,7 @@ export function TorrentReviewCard({
                             <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 <ArrowUp className="h-3.5 w-3.5" /> Seeders
                             </span>
-                            <span className="font-mono text-lg font-bold text-primary">
+                            <span className="font-mono text-lg font-bold text-primary tabular-nums">
                                 {health.seeders.toLocaleString()}
                             </span>
                         </div>
@@ -249,7 +249,7 @@ export function TorrentReviewCard({
                             <span className="flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 <ArrowDown className="h-3.5 w-3.5" /> Leechers
                             </span>
-                            <span className="font-mono text-lg font-bold text-warning">
+                            <span className="font-mono text-lg font-bold text-warning tabular-nums">
                                 {health.leechers.toLocaleString()}
                             </span>
                         </div>
@@ -262,7 +262,7 @@ export function TorrentReviewCard({
                         <div className="flex items-center justify-between border-b border-border bg-background/50 px-3 py-2">
                             <span className="text-sm font-semibold text-muted-foreground">
                                 Files
-                                <span className="ml-2 text-xs font-normal">
+                                <span className="ml-2 text-xs font-normal tabular-nums">
                                     ({item.selectedFilePaths.length}/{analysis.files.length} selected)
                                 </span>
                             </span>
@@ -322,7 +322,7 @@ export function TorrentReviewCard({
                                         </div>
                                         <span
                                             className={cn(
-                                                'ml-3 shrink-0 font-mono text-xs',
+                                                'ml-3 shrink-0 font-mono text-xs tabular-nums',
                                                 isSelected
                                                     ? 'font-bold text-foreground'
                                                     : 'text-muted-foreground'

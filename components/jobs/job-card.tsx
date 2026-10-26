@@ -699,14 +699,14 @@ export function JobCard({
                                         <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
                                             <div
                                                 className={cn(
-                                                    'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint',
+                                                    'h-full w-full rounded-full transition-[transform,background-color] duration-500 ease-out-quint',
                                                     downloadPct >= 100
                                                         ? 'bg-success'
                                                         : isDownloadFailed
                                                           ? 'bg-danger'
                                                           : 'bg-primary'
                                                 )}
-                                                style={{ width: `${downloadPct}%` }}
+                                                style={{ transform: `translateX(-${100 - downloadPct}%)` }}
                                             />
                                         </div>
 
@@ -776,14 +776,14 @@ export function JobCard({
                                         <div className="h-1.5 w-full rounded-full bg-surface-300/80 overflow-hidden">
                                             <div
                                                 className={cn(
-                                                    'h-full rounded-full transition-[width,background-color] duration-500 ease-out-quint',
+                                                    'h-full w-full rounded-full transition-[transform,background-color] duration-500 ease-out-quint',
                                                     uploadPct >= 100
                                                         ? 'bg-success'
                                                         : isUploadFailed
                                                           ? 'bg-danger'
                                                           : 'bg-info-medium'
                                                 )}
-                                                style={{ width: `${uploadPct}%` }}
+                                                style={{ transform: `translateX(-${100 - uploadPct}%)` }}
                                             />
                                         </div>
 

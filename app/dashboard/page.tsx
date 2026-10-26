@@ -218,22 +218,30 @@ export default function DashboardPage() {
                 <div className="flex flex-col gap-3 p-6 pb-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-3 flex-wrap">
                         <h2 className="text-lg font-semibold">Recent Jobs</h2>
-                        <div className="inline-flex items-center gap-1 rounded-lg bg-surface-400/70 p-1">
-                            {RECENT_PHASE_TABS.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    type="button"
-                                    onClick={() => setRecentPhase(tab.id)}
-                                    className={cn(
-                                        'rounded-md px-2.5 py-1 text-xs font-medium select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
-                                        recentPhase === tab.id
-                                            ? 'bg-primary text-white'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    )}
-                                >
-                                    {tab.label}
-                                </button>
-                            ))}
+                        <div
+                            className="inline-flex items-center gap-1 rounded-lg bg-surface-400/70 p-1"
+                            role="group"
+                            aria-label="Filter recent jobs by phase"
+                        >
+                            {RECENT_PHASE_TABS.map((tab) => {
+                                const active = recentPhase === tab.id
+                                return (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        aria-pressed={active}
+                                        onClick={() => setRecentPhase(tab.id)}
+                                        className={cn(
+                                            'rounded-md px-2.5 py-1 text-xs font-medium select-none transition-[background-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
+                                            active
+                                                ? 'bg-primary text-white'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        )}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
 

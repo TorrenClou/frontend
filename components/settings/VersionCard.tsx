@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
+  AlertTriangle,
   ArrowUpCircle,
   Check,
   CheckCircle2,
@@ -33,6 +34,7 @@ export function VersionCard() {
   const {
     frontendVersion,
     backendVersion,
+    displayVersion,
     versionInfo,
     isLoadingVersion,
     updateCheck,
@@ -50,6 +52,8 @@ export function VersionCard() {
   }
 
   const hasUpdate = Boolean(updateCheck?.hasUpdate && updateCheck?.latestVersion)
+  const hasCheckError = Boolean(updateCheck?.error) && !hasUpdate
+  const isInitialCheckPending = !updateCheck && isCheckingUpdates
   const latestVersion = updateCheck?.latestVersion
   const shortSha = versionInfo?.buildSha ? versionInfo.buildSha.slice(0, 7) : null
 
@@ -59,7 +63,7 @@ export function VersionCard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Server className="h-5 w-5" />
+              <Server className="h-5 w-5" aria-hidden="true" />
               Version &amp; Updates
             </CardTitle>
             <CardDescription>
@@ -76,6 +80,7 @@ export function VersionCard() {
               disabled={isCheckingUpdates}
             >
               <RefreshCw
+                aria-hidden="true"
                 className={cn(
                   'mr-2 h-3.5 w-3.5',
                   isCheckingUpdates && 'animate-spin'
@@ -94,7 +99,7 @@ export function VersionCard() {
                 rel="noopener noreferrer"
               >
                 Releases
-                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
               </a>
             </Button>
           </div>
@@ -108,29 +113,43 @@ export function VersionCard() {
             'flex flex-col justify-between gap-3 rounded-lg border p-3.5 sm:flex-row sm:items-center',
             hasUpdate
               ? 'border-primary/40 bg-primary/10'
-              : 'border-border bg-background/40'
+              : hasCheckError
+                ? 'border-warning/40 bg-warning/10'
+                : 'border-border bg-background/40'
           )}
         >
           <div className="flex items-start gap-3">
             {hasUpdate ? (
-              <ArrowUpCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary-200" />
+              <ArrowUpCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary-200" aria-hidden="true" />
+            ) : hasCheckError ? (
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning-medium" aria-hidden="true" />
+            ) : isInitialCheckPending ? (
+              <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-muted-foreground" aria-hidden="true" />
             ) : (
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-medium" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-medium" aria-hidden="true" />
             )}
             <div className="space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold">
                   {hasUpdate
                     ? `Update available: v${latestVersion}`
-                    : 'Your instance is up to date'}
+                    : hasCheckError
+                      ? 'Unable to verify GitHub release status'
+                      : isInitialCheckPending
+                        ? 'Checking GitHub releases…'
+                        : 'Your instance is up to date'}
                 </span>
                 {hasUpdate ? (
                   <Badge variant="processing" className="font-mono tabular-nums">
-                    v{backendVersion} → v{latestVersion}
+                    v{updateCheck?.currentVersion ?? displayVersion} → v{latestVersion}
+                  </Badge>
+                ) : hasCheckError ? (
+                  <Badge variant="warning" className="font-mono tabular-nums">
+                    v{displayVersion}
                   </Badge>
                 ) : (
                   <Badge variant="success" className="font-mono tabular-nums">
-                    v{backendVersion}
+                    v{displayVersion}
                   </Badge>
                 )}
               </div>
@@ -152,7 +171,7 @@ export function VersionCard() {
                     )}
                   </>
                 ) : (
-                  'Checking GitHub releases…'
+                  'Querying official TorrentDrive release tags…'
                 )}
               </p>
             </div>
@@ -166,7 +185,7 @@ export function VersionCard() {
                 rel="noopener noreferrer"
               >
                 View v{latestVersion} Release
-                <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
               </a>
             </Button>
           )}
@@ -176,11 +195,15 @@ export function VersionCard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-border bg-background/40 p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Server className="h-3.5 w-3.5 text-primary-200" />
+              <Server className="h-3.5 w-3.5 text-primary-200" aria-hidden="true" />
               <span>Backend Engine</span>
             </div>
             <p className="mt-1 font-mono text-lg font-bold tabular-nums">
-              {isLoadingVersion ? '—' : `v${backendVersion}`}
+              {isLoadingVersion
+                ? '—'
+                : backendVersion
+                  ? `v${backendVersion}`
+                  : 'Unreachable'}
             </p>
             <p className="text-[11px] text-muted-foreground">
               API &amp; background workers
@@ -189,7 +212,7 @@ export function VersionCard() {
 
           <div className="rounded-lg border border-border bg-background/40 p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Layers className="h-3.5 w-3.5 text-info-light" />
+              <Layers className="h-3.5 w-3.5 text-info-light" aria-hidden="true" />
               <span>Web Dashboard</span>
             </div>
             <p className="mt-1 font-mono text-lg font-bold tabular-nums">
@@ -202,7 +225,7 @@ export function VersionCard() {
 
           <div className="rounded-lg border border-border bg-background/40 p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <GitCommit className="h-3.5 w-3.5 text-primary-200" />
+              <GitCommit className="h-3.5 w-3.5 text-primary-200" aria-hidden="true" />
               <span>Build Commit</span>
             </div>
             <p className="mt-1 font-mono text-lg font-bold tabular-nums">
@@ -217,7 +240,7 @@ export function VersionCard() {
 
           <div className="rounded-lg border border-border bg-background/40 p-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Database className="h-3.5 w-3.5 text-success-medium" />
+              <Database className="h-3.5 w-3.5 text-success-medium" aria-hidden="true" />
               <span>Database Schema</span>
             </div>
             <p className="mt-1 truncate font-mono text-sm font-semibold tabular-nums">
@@ -249,7 +272,7 @@ export function VersionCard() {
               type="button"
               onClick={handleCopyUpgrade}
               className={cn(
-                'inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-xs select-none transition-[background-color,border-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
+                'inline-flex min-h-7 shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-xs select-none transition-[background-color,border-color,color,transform] duration-150 ease-out-quart active:scale-[0.97]',
                 copiedCmd
                   ? 'border-success/40 bg-success/15 text-success-medium'
                   : 'border-surface-300/60 bg-surface-400/60 text-muted-foreground hover:text-foreground'
@@ -257,12 +280,12 @@ export function VersionCard() {
             >
               {copiedCmd ? (
                 <>
-                  <Check className="h-3.5 w-3.5" />
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Copied</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5" />
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Copy command</span>
                 </>
               )}

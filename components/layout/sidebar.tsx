@@ -24,6 +24,7 @@ function HealthWidget() {
   const {
     frontendVersion,
     backendVersion,
+    displayVersion,
     updateCheck,
     isCheckingUpdates,
     checkForUpdates,
@@ -75,9 +76,10 @@ function HealthWidget() {
           disabled={isCheckingUpdates}
           title="Check for updates on GitHub"
           aria-label="Check for updates"
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-400/70 px-2 py-0.5 font-mono text-[10px] text-muted-foreground select-none transition-[background-color,border-color,color,transform] duration-150 ease-out-quart hover:border-primary/40 hover:text-foreground active:scale-[0.97] disabled:opacity-50"
+          className="inline-flex min-h-6 items-center gap-1 rounded-md border border-border bg-surface-400/70 px-2 py-1 font-mono text-[10px] text-muted-foreground select-none transition-[background-color,border-color,color,transform] duration-150 ease-out-quart hover:border-primary/40 hover:text-foreground active:scale-[0.97] disabled:opacity-50"
         >
           <RefreshCw
+            aria-hidden="true"
             className={cn('h-2.5 w-2.5', isCheckingUpdates && 'animate-spin')}
           />
           <span>{isCheckingUpdates ? 'Checking' : 'Check update'}</span>
@@ -89,9 +91,9 @@ function HealthWidget() {
         <Link
           href="/dashboard/settings"
           className="truncate hover:text-foreground transition-colors"
-          title={`Backend v${backendVersion} · UI v${frontendVersion}`}
+          title={`Backend ${backendVersion ? `v${backendVersion}` : 'unreachable'} · UI v${frontendVersion}`}
         >
-          v{backendVersion}
+          v{displayVersion}
           {ready?.databaseResponseTimeMs != null && ` · DB ${ready.databaseResponseTimeMs}ms`}
           {ready?.redisResponseTimeMs != null && ` · Redis ${ready.redisResponseTimeMs}ms`}
         </Link>
@@ -103,13 +105,13 @@ function HealthWidget() {
           href={updateCheck.releaseUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between gap-1.5 rounded-md border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary-100 transition-colors hover:bg-primary/25 active:scale-[0.98]"
+          className="flex min-h-6 items-center justify-between gap-1.5 rounded-md border border-primary/40 bg-primary/15 px-2 py-1 text-[11px] font-medium text-primary-100 transition-colors hover:bg-primary/25 active:scale-[0.98]"
         >
           <span className="inline-flex items-center gap-1.5 truncate font-mono tabular-nums">
-            <ArrowUpCircle className="h-3.5 w-3.5 shrink-0 text-primary-200" />
+            <ArrowUpCircle className="h-3.5 w-3.5 shrink-0 text-primary-200" aria-hidden="true" />
             <span>v{updateCheck.latestVersion} available</span>
           </span>
-          <ExternalLink className="h-3 w-3 shrink-0 opacity-80" />
+          <ExternalLink className="h-3 w-3 shrink-0 opacity-80" aria-hidden="true" />
         </a>
       )}
     </div>
@@ -138,7 +140,7 @@ interface SidebarProps {
 
 export function Sidebar({ className, showCloseButton, onClose }: SidebarProps = {}) {
   const pathname = usePathname()
-  const { backendVersion } = useVersionAndUpdates()
+  const { displayVersion } = useVersionAndUpdates()
 
   const isActive = (item: (typeof navigation)[number]) => {
     if (item.exact) {
@@ -155,11 +157,11 @@ export function Sidebar({ className, showCloseButton, onClose }: SidebarProps = 
       <div className="flex h-16 items-center border-b border-border px-4 sm:px-6">
         <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground border border-primary-400/40">
-            <CloudDownload className="h-4 w-4 text-white" />
+            <CloudDownload className="h-4 w-4 text-white" aria-hidden="true" />
           </div>
           <span className="text-lg font-bold tracking-tight truncate">TorrentDrive</span>
           <span className="rounded border border-surface-300/60 bg-surface-400/70 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground tabular-nums">
-            v{backendVersion}
+            v{displayVersion}
           </span>
         </Link>
         {showCloseButton && (
@@ -169,7 +171,7 @@ export function Sidebar({ className, showCloseButton, onClose }: SidebarProps = 
             aria-label="Close navigation"
             className="ml-auto rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground active:scale-[0.97]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -190,7 +192,7 @@ export function Sidebar({ className, showCloseButton, onClose }: SidebarProps = 
                   : 'text-muted-foreground hover:bg-surface-400/70 hover:text-foreground'
               )}
             >
-              <item.icon className="mr-3 h-4 w-4 shrink-0" />
+              <item.icon className="mr-3 h-4 w-4 shrink-0" aria-hidden="true" />
               {item.name}
             </Link>
           )
