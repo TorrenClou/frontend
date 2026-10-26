@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.7.0] - 2026-10-26
+
+* feat(dashboard): streamline executive dashboard layout and transfer stream (9c357cd)
+* feat(ui): add UnifiedProgressPipeline and CompactTransferRow components (318d42a)
+* refactor(ui): soften StatsCard contrast and streamline metric hierarchy (ea3dc3f)
+
 ## [2.6.4] - 2026-10-26
 
 * Fix OAuth popup callback handling (aa0df37)
