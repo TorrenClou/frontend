@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.6.1] - 2026-10-26
+
+* fix(ui): dual-repo update check, compositor progress transforms, and a11y polish (3288938)
+
 ## [2.6.0] - 2026-10-26
 
 * feat(ui): add instance versioning and check-for-updates in web dashboard (a2a593f)
